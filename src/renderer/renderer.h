@@ -1,9 +1,14 @@
 #pragma once
 
 #include "../logging/logger.h"
-#include "instance.h"
+//#include "instance.h"
 
 #include "GLFW/include/GLFW/glfw3.h"
+
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+//#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
 #include <functional>
@@ -17,12 +22,22 @@ public:
 	* 
 	* @param window: Min window to render to
 	*/
-	Engine(GLFWwindow* window);
+	explicit Engine(GLFWwindow* window);
 
 	/**
 	* @brief Destroy the Engine object
 	*/
 	~Engine();
+
+	/**
+	* @brief Create a Vulkan instance
+	*
+	* @param applicationName: The name of the application
+	* @param deletionQueue: Queue onto which to push the instance's destructor
+	*
+	* @return The instance created
+	*/
+	void make_instance(const char* applicationName, std::deque<std::function<void()>>& deletionQueue);
 
 private:
 	
@@ -41,11 +56,14 @@ private:
 	*/
 	std::deque<std::function<void()>> deletionQueue;
 
+	/**
+	* @brief The context helper class
+	*/
+	vk::raii::Context context;
 
 	/**
 	* @brief The main instance
 	*/
-	vk::Instance instance;
-
+	vk::raii::Instance instance = nullptr;
 
 };

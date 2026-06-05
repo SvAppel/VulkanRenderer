@@ -2,7 +2,7 @@
 #include "../logging/logger.h"
 #include <GLFW/include/GLFW/glfw3.h>
 
-vk::Instance make_instance(const char* applicationName, std::deque<std::function<void()>>& deletionQueue)
+vk::Instance make_instance(const char* applicationName, vk::raii::Context* context, std::deque<std::function<void()>>& deletionQueue)
 {
 	Logger* logger = Logger::get_logger();
 
@@ -12,14 +12,21 @@ vk::Instance make_instance(const char* applicationName, std::deque<std::function
 
 	logger->report_version_number(version);
 
-	vk::ApplicationInfo appInfo = vk::ApplicationInfo(applicationName, version, NULL, version, version, nullptr);
+	//vk::ApplicationInfo appInfo = vk::ApplicationInfo(applicationName, version, NULL, version, version, nullptr);
+	vk::ApplicationInfo appInfo{ .pApplicationName = applicationName,
+	.applicationVersion = version,
+	.pEngineName = NULL,
+	.engineVersion = version,
+	.apiVersion = version };
 
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 	logger->print_list(glfwExtensions, glfwExtensionCount);
 
-	vk::InstanceCreateInfo createInfo = vk::InstanceCreateInfo(vk::InstanceCreateFlags(), &appInfo, 0, nullptr, glfwExtensionCount, glfwExtensions);
+	//vk::InstanceCreateInfo createInfo = vk::InstanceCreateInfo(vk::InstanceCreateFlags(), &appInfo, 0, nullptr, glfwExtensionCount, glfwExtensions);
+	vk::InstanceCreateInfo createInfo{ .pApplicationInfo = &appInfo };
+
 	vk::ResultValue<vk::Instance> instanceAttempt = vk::createInstance(createInfo);
 
 	if (instanceAttempt.result != vk::Result::eSuccess) 

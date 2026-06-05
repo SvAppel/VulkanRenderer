@@ -1,7 +1,10 @@
 #pragma once
 
 #define VULKAN_HPP_NO_EXCEPTIONS
-#include <vulkan/vulkan.hpp>
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+//#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_raii.hpp>
+
 #include <deque>
 #include <functional>
 
@@ -13,4 +16,4 @@
 *
 * @return The instance created
 */
-vk::Instance make_instance(const char* applicationName, std::deque<std::function<void()>>& deletionQueue);
+vk::Instance make_instance(const char* applicationName, vk::raii::Context* context, std::deque<std::function<void()>>& deletionQueue);
