@@ -1,19 +1,20 @@
 # Locate the glfw3 library
-#
-# This module defines the following variables:
-#
-# GLFW3_LIBRARY the name of the library;
-# GLFW3_INCLUDE_DIR where to find glfw include files.
-# GLFW3_FOUND true if both the GLFW3_LIBRARY and GLFW3_INCLUDE_DIR have been found.
-#
-# To help locate the library and include file, you can define a
-# variable called GLFW3_ROOT which points to the root of the glfw library
-# installation.
-#
-# default search dirs
-# 
-# Cmake file from: https://github.com/daw42/glslcookbook
+# This module defines:
+#   GLFW3_LIBRARY, GLFW3_INCLUDE_DIR, GLFW3_FOUND
 
+# include(FindPkgConfig)
+# if(PKG_CONFIG_FOUND)
+#     pkg_check_modules(GLFW3_PKG glfw3)
+#     if(GLFW3_PKG_FOUND)
+#         set(GLFW3_LIBRARY ${GLFW3_PKG_LIBRARIES})
+#         set(GLFW3_INCLUDE_DIR ${GLFW3_PKG_INCLUDE_DIRS})
+#         set(GLFW3_FOUND TRUE)
+#     endif()
+# endif()
+
+if(NOT GLFW3_FOUND)
+# Fallback for manual search or non-pkg-config systems
+# GLFW3_ROOT can be defined to point to the root of the glfw library installation
 set( _glfw3_HEADER_SEARCH_DIRS
 "/usr/include"
 "/usr/local/include"
@@ -22,6 +23,7 @@ set( _glfw3_HEADER_SEARCH_DIRS
 set( _glfw3_LIB_SEARCH_DIRS
 "/usr/lib"
 "/usr/local/lib"
+"/usr/lib/x86_64-linux-gnu/"
 "${CMAKE_SOURCE_DIR}/lib"
 "C:/Program Files (x86)/glfw/lib-msvc110" )
 
@@ -47,3 +49,4 @@ PATHS ${_glfw3_LIB_SEARCH_DIRS} )
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(GLFW3 DEFAULT_MSG
 GLFW3_LIBRARY GLFW3_INCLUDE_DIR)
+endif()

@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.28.0)
+cmake_minimum_required(VERSION 3.22.0)
 
 project(VulkanRenderer)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_MODULE_PATH $ {CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 

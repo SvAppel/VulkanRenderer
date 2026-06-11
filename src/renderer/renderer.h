@@ -5,7 +5,7 @@
 
 #include "GLFW/include/GLFW/glfw3.h"
 
-#define VULKAN_HPP_NO_EXCEPTIONS
+//#define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 //#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
@@ -29,6 +29,19 @@ public:
 	*/
 	~Engine();
 
+
+	/**
+	 * @brief Check whether the requested extensions and layers are supported.
+	 * 
+	 * @param extensionNames: A list of extension names being requested.
+	 * @param extensionCount: The number of requested extensions.
+	 * @param layerNames: A list of layer names being requested.
+	 * @param layerCount: The number of requested layers.
+	 * 
+	 * @return Whether all of the extensions and layers are supported
+	 */
+	bool supported_by_instance(const char** extensionNames, int extensionCount, const char** layerNames, int layerCount);
+
 	/**
 	* @brief Create a Vulkan instance
 	*
@@ -38,6 +51,8 @@ public:
 	* @return The instance created
 	*/
 	void make_instance(const char* applicationName, std::deque<std::function<void()>>& deletionQueue);
+
+	
 
 private:
 	
@@ -65,5 +80,15 @@ private:
 	* @brief The main instance
 	*/
 	vk::raii::Instance instance = nullptr;
+
+	// /**
+	//  * @brief Dynamic instance dispatcher
+	//  */
+	// vk::detail::DispatchLoaderDynamic dldi;
+
+	/**
+	 * @brief Debug messenger 
+	 */
+	vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
 };
