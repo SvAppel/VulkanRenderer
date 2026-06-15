@@ -87,6 +87,68 @@ void Logger::print_layers(std::vector<vk::LayerProperties>& layers)
 	}
 }
 
+void Logger::print_error(std::string errorMessage)
+{
+	if (!enabled)
+		return;
+
+	throw std::runtime_error(errorMessage);
+}
+
+void Logger::log(const vk::raii::PhysicalDevice& device)
+{
+	if(!enabled)
+		return;
+
+	vk::PhysicalDeviceProperties properties = device.getProperties();
+
+	std::cout << "Device name: " << properties.deviceName << std::endl;
+
+	std::cout << "Device type: " << vk::to_string(properties.deviceType) << std::endl;
+}
+
+void Logger::log(std::vector<vk::QueueFamilyProperties> queueFamilies)
+{
+	if(!enabled)
+		return;
+	
+	std::cout << "There are " << queueFamilies.size() << " queue families on the system" << std::endl;
+
+	for(uint32_t i = 0; i < queueFamilies.size(); i++)
+	{
+		vk::QueueFamilyProperties queueFamily = queueFamilies[i];
+
+		std::cout << "Queue family " << i << ":" << std::endl;
+		std::cout << "\tSupports ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eCompute)
+			std::cout << "compute, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
+			std::cout << "graphics, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eTransfer)
+			std::cout << "transfer, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eOpticalFlowNV)
+			std::cout << "nvidia optical flow, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eSparseBinding)
+			std::cout << "spase binding, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eProtected)
+			std::cout << "protected memory, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eDataGraphARM)
+			std::cout << "ARM data graph, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eVideoDecodeKHR)
+			std::cout << "video decode, ";
+		if(queueFamily.queueFlags & vk::QueueFlagBits::eVideoEncodeKHR)
+			std::cout << "video encode, ";
+		
+		std::cout << std::endl;
+
+		std::cout << "\tFamily supports " << queueFamily.queueCount << " queues" << std::endl;
+	}
+}
+
+
+
+
+
 vk::raii::DebugUtilsMessengerEXT Logger::make_debug_messenger(vk::raii::Instance& instance/*, vk::detail::DispatchLoaderDynamic& dldi*/)
 {
 	if(!enabled)

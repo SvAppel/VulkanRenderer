@@ -3,6 +3,7 @@
 #include "../logging/logger.h"
 //#include "instance.h"
 
+#define GLFW_INCLUDE_VULKAN
 #include "GLFW/include/GLFW/glfw3.h"
 
 //#define VULKAN_HPP_NO_EXCEPTIONS
@@ -90,5 +91,25 @@ private:
 	 * @brief Debug messenger 
 	 */
 	vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
+
+	/**
+	 * @brief A physical device
+	 */
+	vk::raii::PhysicalDevice physicalDevice = nullptr;
+
+	/**
+	 * @brief An abstraction of the physical device
+	 */
+	vk::raii::Device logicalDevice = nullptr;
+
+	/**
+	 * @brief Queues for work submission
+	 */
+	vk::raii::Queue graphicsQueue = nullptr;
+
+	/**
+	 * @brief Surface to present to
+	 */
+	vk::raii::SurfaceKHR surface = nullptr;
 
 };

@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "device.h"
 
 #include <iostream>
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // In a .cpp file
@@ -12,6 +13,17 @@ Engine::Engine(GLFWwindow* window) : window(window)
 	make_instance("Real Engine", deletionQueue);
 	//dldi = vk::detail::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
 	debugMessenger = logger->make_debug_messenger(instance/*, dldi*/);
+
+	VkSurfaceKHR raw_surface;
+	if(glfwCreateWindowSurface(*instance, window, nullptr, &raw_surface) != 0)
+		logger->print_error("Failed to create window surface!");
+	surface = vk::raii::SurfaceKHR(instance, raw_surface);
+
+
+	physicalDevice = choose_physical_device(instance);
+	logicalDevice = create_logical_device(physicalDevice, surface);
+	uint32_t graphicsQueueFamilyIndex = findQueueFamilyIndex(physicalDevice, surface, vk::QueueFlagBits::eGraphics);
+	graphicsQueue = logicalDevice.getQueue(graphicsQueueFamilyIndex, 0);
 }
 
 Engine::~Engine()
@@ -58,8 +70,7 @@ bool Engine::supported_by_instance(const char** extensionNames, int extensionCou
 		if(!found)
 		{
 			lineBuilder << "Extension \"" << extension << "\" is not supported!";
-			logger->print(lineBuilder.str());
-			throw std::runtime_error(lineBuilder.str());
+			logger->print_error(lineBuilder.str());
 			return false;
 		}
 	}
@@ -91,8 +102,7 @@ bool Engine::supported_by_instance(const char** extensionNames, int extensionCou
 		if(!found)
 		{
 			lineBuilder << "Layer \"" << layer << "\" is not supported!";
-			logger->print(lineBuilder.str());
-			throw std::runtime_error(lineBuilder.str());
+			logger->print_error(lineBuilder.str());
 			return false;
 		}
 	}

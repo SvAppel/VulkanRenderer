@@ -16,7 +16,7 @@ add_executable(VulkanRenderer
 	src/controller/app.cpp
 	src/logging/logger.cpp
 	src/renderer/renderer.cpp
-	src/renderer/instance.cpp
+	src/renderer/device.cpp
 )
 
 

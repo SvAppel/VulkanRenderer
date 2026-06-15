@@ -71,6 +71,27 @@ public:
 	void print_layers(std::vector<vk::LayerProperties>& layers);
 
 	/**
+	 * @brief Print an error
+	 * 
+	 * @param errorMessage: The error message
+	 */
+	void print_error(std::string errorMessage);
+
+	/**
+	 * @brief Print the properies of a physical devide
+	 * 
+	 * @param device: The physical device
+	 */
+	void log(const vk::raii::PhysicalDevice& device);
+
+	/**
+	* @brief Print the properies of a physical devide
+	* 
+	* @param queueFamilies: The physical device
+	*/
+	void log(std::vector<vk::QueueFamilyProperties> queueFamilies);
+
+	/**
 	 * @brief Make a debug messenger
 	 * 
 	 * @param instance: The Vulkan instence which will be debugged.
