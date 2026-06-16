@@ -47,7 +47,7 @@ vk::raii::PhysicalDevice choose_physical_device(const vk::raii::Instance& instan
  * @param physicalDevice: Physical device to query
  * @param queueType: Type of queue being queried
  * 
- * @return uint32_t: The index of the queue family.
+ * @return uint32_t: The index of the queue family. 
  * max upon failure
  */
 uint32_t findQueueFamilyIndex(vk::raii::PhysicalDevice physicalDevice, vk::raii::SurfaceKHR& surface, vk::QueueFlags queueType);
