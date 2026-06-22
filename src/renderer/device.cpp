@@ -132,16 +132,20 @@ vk::raii::Device create_logical_device(vk::raii::PhysicalDevice physicalDevice, 
     vk::StructureChain<vk::PhysicalDeviceFeatures2,
                         vk::PhysicalDeviceVulkan11Features,
                         vk::PhysicalDeviceVulkan13Features,
-                        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+                        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT,
+                        vk::PhysicalDeviceShaderObjectFeaturesEXT>
         featureChain = {
             {},                                 // vk::PhysicalDeviceFeatures2 (empty for now)
             {.shaderDrawParameters = true},     // Enable shader draw parameters from Vulkan 1.1
             {.dynamicRendering = true},         // Enable dynamic rendering from Vulkan 1.3
-            {.extendedDynamicState = true}      // Enable extended dynamic state from the extension
+            {.extendedDynamicState = true},      // Enable extended dynamic state from the extension
+            {.shaderObject = true}
         };
 
     std::vector<const char*> requiredDeviceExtension = {
-        vk::KHRSwapchainExtensionName
+        vk::KHRSwapchainExtensionName,
+        vk::EXTShaderObjectExtensionName,
+        vk::KHRDynamicRenderingExtensionName
     };
 
     //Modern Vulkan no longer differentiates between instance and device-specific validation layers
@@ -161,8 +165,7 @@ vk::raii::Device create_logical_device(vk::raii::PhysicalDevice physicalDevice, 
 
     vk::raii::Device device = vk::raii::Device(physicalDevice, deviceCreateInfo);
 
-    if(device != nullptr)
-        logger->print("Successfully abstracted GPU!");
+    logger->print("Successfully abstracted GPU!");
 
     return device;
 }

@@ -1,5 +1,7 @@
 #include "renderer.h"
 #include "device.h"
+#include "shader.h"
+#include "command.h"
 
 #include <iostream>
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // In a .cpp file
@@ -18,12 +20,33 @@ Engine::Engine(GLFWwindow* window) : window(window)
 	if(glfwCreateWindowSurface(*instance, window, nullptr, &raw_surface) != 0)
 		logger->print_error("Failed to create window surface!");
 	surface = vk::raii::SurfaceKHR(instance, raw_surface);
-
+	logger->print("Successfully created vulkan surface!");
 
 	physicalDevice = choose_physical_device(instance);
 	logicalDevice = create_logical_device(physicalDevice, surface);
 	uint32_t graphicsQueueFamilyIndex = findQueueFamilyIndex(physicalDevice, surface, vk::QueueFlagBits::eGraphics);
 	graphicsQueue = logicalDevice.getQueue(graphicsQueueFamilyIndex, 0);
+
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	swapchain.build(logicalDevice, physicalDevice, surface, width, height);
+
+	std::vector<vk::Image> swapchainImages = swapchain.chain.getImages();
+
+	for(uint32_t i = 0; i<swapchainImages.size(); i++)
+	{
+		frames.push_back(Frame(swapchainImages[i], logicalDevice, swapchain.format.format));
+	}
+
+	shaders = make_shader_objects(logicalDevice, "../shaders/vertex.spv", "../shaders/fragment.spv");
+
+	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
+
+	for(uint32_t i = 0; i < swapchainImages.size(); i++)
+	{
+		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
+		frames[i].set_command_buffer(commandBuffer, shaders, swapchain.extent);
+	}
 }
 
 Engine::~Engine()
@@ -172,7 +195,6 @@ void Engine::make_instance(const char* applicationName, std::deque<std::function
 	if(!supported_by_instance(ppEnabledExtensionNames, enabledExtensionCount, ppEnabledLayerNames, enabledLayerCount))
 		return;
 
-	//vk::InstanceCreateInfo createInfo = vk::InstanceCreateInfo(vk::InstanceCreateFlags(), &appInfo, 0, nullptr, glfwExtensionCount, glfwExtensions);
 	vk::InstanceCreateInfo createInfo{ 
 		.pApplicationInfo = &appInfo,
 		.enabledLayerCount = enabledLayerCount,
@@ -180,20 +202,32 @@ void Engine::make_instance(const char* applicationName, std::deque<std::function
 		.enabledExtensionCount = enabledExtensionCount,
 		.ppEnabledExtensionNames = ppEnabledExtensionNames};
 
-	/*vk::ResultValue<vk::Instance> instanceAttempt = vk::createInstance(createInfo);
-
-	if (instanceAttempt.result != vk::Result::eSuccess)
-	{
-		logger->print("Failed to create Instance!");
-		return;
-	}*/
-
 	instance = vk::raii::Instance(context, createInfo);
-	/*VkInstance handle = instance;
+}
 
-	deletionQueue.push_back([logger, handle]()
-		{
-			vkDestroyInstance(handle, nullptr);
-			logger->print("Deleted Instance!");
-		});*/
+void Engine::draw()
+{
+	uint32_t imageIndex{0};
+
+	vk::SubmitInfo submitInfo
+	{
+		.commandBufferCount = 1,
+		.pCommandBuffers = &*frames[0].commandBuffer
+	};
+
+	graphicsQueue.submit(submitInfo);
+	graphicsQueue.waitIdle();
+
+	vk::PresentInfoKHR presentInfo
+	{
+		.swapchainCount = 1,
+		.pSwapchains = &*swapchain.chain,
+		.pImageIndices = &imageIndex
+	};
+
+	vk::Result result = graphicsQueue.presentKHR(presentInfo);
+	if(result != vk::Result::eSuccess)
+		logger->print_error("Unable to present image!");
+
+	graphicsQueue.waitIdle();
 }

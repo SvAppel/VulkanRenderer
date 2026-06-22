@@ -5,6 +5,8 @@
 
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
+#include <vulkan/vulkan_enums.hpp>
+#include <vulkan/vulkan_to_string.hpp>
 
 class Logger 
 {
@@ -90,6 +92,38 @@ public:
 	* @param queueFamilies: The physical device
 	*/
 	void log(std::vector<vk::QueueFamilyProperties> queueFamilies);
+
+	/**
+	* @brief Print the surface capabilities of a physical devide
+	* 
+	* @param capabilities: The surface capabilities
+	*/
+	void log(const vk::SurfaceCapabilitiesKHR& capabilities);
+
+	/**
+	* @brief Print the surface formats of a physical device
+	* 
+	* @param formats: The surface formats
+	*/
+	void log(std::vector<vk::SurfaceFormatKHR> formats);
+
+	/**
+	* @brief Print the surface present modes of a physical device
+	* 
+	* @param presentModes: The surface present modes
+	*/
+	void log(std::vector<vk::PresentModeKHR> presentModes);
+
+	std::vector<std::string> parse_transform_bits(vk::SurfaceTransformFlagsKHR bits);
+
+	std::vector<std::string> parse_alpha_composite_bits(vk::CompositeAlphaFlagsKHR bits);
+
+	std::vector<std::string> parse_image_usage_bits(vk::ImageUsageFlags bits);
+
+	void log(std::vector<std::string>& entries, const std::string& indent);
+
+
+
 
 	/**
 	 * @brief Make a debug messenger

@@ -13,10 +13,16 @@ add_executable(VulkanRenderer
 
 	src/main.cpp
 	src/backend/glfw_backend.cpp
+	src/backend/file.cpp
 	src/controller/app.cpp
 	src/logging/logger.cpp
 	src/renderer/renderer.cpp
 	src/renderer/device.cpp
+	src/renderer/frame.cpp
+	src/renderer/swapchain.cpp
+	src/renderer/image.cpp
+	src/renderer/shader.cpp
+	src/renderer/command.cpp
 )
 
 

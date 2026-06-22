@@ -1,14 +1,14 @@
 #pragma once
 
 #include "../logging/logger.h"
-//#include "instance.h"
+#include "frame.h"
+#include "swapchain.h"
+
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/include/GLFW/glfw3.h"
 
-//#define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
-//#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
@@ -52,6 +52,11 @@ public:
 	* @return The instance created
 	*/
 	void make_instance(const char* applicationName, std::deque<std::function<void()>>& deletionQueue);
+
+	/**
+	 * @brief The engine drawing function
+	 */
+	void draw();
 
 	
 
@@ -111,5 +116,25 @@ private:
 	 * @brief Surface to present to
 	 */
 	vk::raii::SurfaceKHR surface = nullptr;
+
+	/**
+	 * @brief The engine's swapchain
+	 */
+	Swapchain swapchain;
+
+	/**
+	 * @brief Frames used for rendering
+	 */
+	std::vector<Frame> frames;
+
+	/**
+	 * @brief The shader objects
+	 */
+	std::vector<vk::raii::ShaderEXT> shaders;
+
+	/**
+	 * @brief The command pool
+	 */
+	vk::raii::CommandPool commandPool = nullptr;
 
 };

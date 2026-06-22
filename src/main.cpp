@@ -18,7 +18,7 @@ void spawn_render_thread(GLFWwindow* window, std::atomic<bool>* done)
 
 	while (!*done) 
 	{
-		// Do work repeatedly
+		engine->draw();
 	}
 
 	delete engine;
