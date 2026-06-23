@@ -38,7 +38,7 @@ Engine::Engine(GLFWwindow* window) : window(window)
 		frames.push_back(Frame(swapchainImages[i], logicalDevice, swapchain.format.format));
 	}
 
-	shaders = make_shader_objects(logicalDevice, "../shaders/vertex.spv", "../shaders/fragment.spv");
+	shaders = make_shader_objects(logicalDevice, "shader");
 
 	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
 

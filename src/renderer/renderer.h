@@ -14,6 +14,8 @@
 #include <deque>
 #include <functional>
 
+#include "shaderc/shaderc.h"
+
 class Engine 
 {
 public:

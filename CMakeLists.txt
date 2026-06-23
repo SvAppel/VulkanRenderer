@@ -8,6 +8,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
+find_path(SHADERC_INCLUDE_DIR shaderc/shaderc.h PATHS "${VULKAN_SDK}/include" "$ENV{VULKAN_SDK}/include")
+find_library(SHADERC_LIBRARY shaderc_combined PATHS "${VULKAN_SDK}/lib" "$ENV{VULKAN_SDK}/lib")
+
 
 add_executable(VulkanRenderer
 
@@ -31,9 +34,11 @@ include_directories(${GLFW_INCLUDE_DIRS})
 target_include_directories(VulkanRenderer
 	PRIVATE
 	dependencies
+	${SHADERC_INCLUDE_DIR}
 )
 
 target_link_libraries(VulkanRenderer
 	${GLFW3_LIBRARY}
 	Vulkan::Vulkan
+	${SHADERC_LIBRARY}
 )
