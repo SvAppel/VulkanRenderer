@@ -139,4 +139,19 @@ private:
 	 */
 	vk::raii::CommandPool commandPool = nullptr;
 
+	/**
+	 * @brief A Semaphore for GPU synchronisation after the image has been aquired
+	 */
+	vk::raii::Semaphore imageAuqiredSemaphore = nullptr;
+
+	/**
+	 * @brief A Semaphore for GPU synchronisation after the render has finished
+	 */
+	vk::raii::Semaphore renderFinishedSemaphore = nullptr;
+
+	/**
+	 * @brief A fence for CPU synchronisation after the render has finished
+	 */
+	vk::raii::Fence renderFinishedFence = nullptr;
+
 };

@@ -50,16 +50,16 @@ public:
 private:
 
     /**
+     * @brief Build a description of the color attachment
+     */
+    void build_color_attachment();
+
+    /**
      * @brief Build a description of the rendering info
      * 
      * @param frameSize: Size of the screen
      */
     void build_rendering_info(vk::Extent2D frameSize);
-
-    /**
-     * @brief Build a description of the color attachment
-     */
-    void build_color_attachment();
 
     /**
      * @brief Dynamically set the normally static pipeline parts within the command buffer

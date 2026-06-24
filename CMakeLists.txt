@@ -26,6 +26,7 @@ add_executable(VulkanRenderer
 	src/renderer/image.cpp
 	src/renderer/shader.cpp
 	src/renderer/command.cpp
+	src/renderer/synchronisation.cpp
 )
 
 

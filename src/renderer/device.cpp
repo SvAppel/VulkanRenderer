@@ -137,7 +137,7 @@ vk::raii::Device create_logical_device(vk::raii::PhysicalDevice physicalDevice, 
         featureChain = {
             {},                                 // vk::PhysicalDeviceFeatures2 (empty for now)
             {.shaderDrawParameters = true},     // Enable shader draw parameters from Vulkan 1.1
-            {.dynamicRendering = true},         // Enable dynamic rendering from Vulkan 1.3
+            {.synchronization2 = true, .dynamicRendering = true},         // Enable dynamic rendering from Vulkan 1.3
             {.extendedDynamicState = true},      // Enable extended dynamic state from the extension
             {.shaderObject = true}
         };

@@ -8,7 +8,7 @@ vk::raii::CommandPool make_command_pool(vk::raii::Device& logicalDevice, uint32_
 
     vk::CommandPoolCreateInfo poolInfo
     {
-        .flags = vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+        .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
         .queueFamilyIndex = queueFamilyindex
     };
 

@@ -21,9 +21,15 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
         transition_image_layout
         (
             commandBuffer, image,
-            vk::ImageLayout::eUndefined, vk::ImageLayout::eAttachmentOptimal,
+            vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal,
             vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::PipelineStageFlagBits2::eTopOfPipe, vk::PipelineStageFlagBits2::eFragmentShader
+            // INFO: This works but is inefficient. 
+            // The destination pipeline stage only needs to be set to when the image needs to be accessed.
+            // Otherwise the image sits unnecessarily long in its layout.
+            // Since the image isnt used beforehand i.e. as a texture to be read from, 
+            // the earliest necessary stage is eColorAttachmentOutput, when the pixel colors are actually written to the image
+            //vk::PipelineStageFlagBits2::eTopOfPipe, vk::PipelineStageFlagBits2::eFragmentShader
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::PipelineStageFlagBits2::eColorAttachmentOutput
         );
 
         //Instead of creating a static pipeline we setup the pipeline dynamically via command buffer instructions
@@ -38,6 +44,7 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
             std::vector<vk::ShaderEXT> rawShaders(shaders.size());
             for (uint32_t i = 0; i < shaders.size(); i++)
             rawShaders[i] = shaders[i];
+            
             commandBuffer.bindShadersEXT(stages, rawShaders);
 
             commandBuffer.draw(3, 1, 0, 0);
@@ -47,12 +54,27 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
         transition_image_layout
         (
             commandBuffer, image,
-            vk::ImageLayout::eAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
+            vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
             vk::AccessFlagBits2::eColorAttachmentWrite, vk::AccessFlagBits2::eNone,
-            vk::PipelineStageFlagBits2::eFragmentShader, vk::PipelineStageFlagBits2::eBottomOfPipe
+            //vk::PipelineStageFlagBits2::eFragmentShader, vk::PipelineStageFlagBits2::eBottomOfPipe
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::PipelineStageFlagBits2::eBottomOfPipe
         );
 
     commandBuffer.end();
+}
+
+void Frame::build_color_attachment()
+{
+    vk::RenderingAttachmentInfoKHR tempColorAttachment
+    {
+        .imageView = imageView,
+        .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .clearValue = vk::ClearValue({0.5f, 0.0f, 0.25f, 1.0f})
+    };
+
+    colorAttachment = tempColorAttachment;
 }
 
 void Frame::build_rendering_info(vk::Extent2D frameSize)
@@ -68,20 +90,6 @@ void Frame::build_rendering_info(vk::Extent2D frameSize)
     };
 
     renderingInfo = tempRenderingInfo;
-}
-
-void Frame::build_color_attachment()
-{
-    vk::RenderingAttachmentInfoKHR tempColorAttachment
-    {
-        .imageView = imageView,
-        .imageLayout = vk::ImageLayout::eAttachmentOptimal,
-        .loadOp = vk::AttachmentLoadOp::eClear,
-        .storeOp = vk::AttachmentStoreOp::eStore,
-        .clearValue = vk::ClearValue({0.5f, 0.0f, 0.25f, 1.0f})
-    };
-
-    colorAttachment = tempColorAttachment;
 }
 
 void Frame::set_dynamic_states(vk::Extent2D frameSize)
@@ -128,4 +136,6 @@ void Frame::set_dynamic_states(vk::Extent2D frameSize)
         | vk::ColorComponentFlagBits::eB
         | vk::ColorComponentFlagBits::eA;
     commandBuffer.setColorWriteMaskEXT(0, colorWriteMask);
+
+    commandBuffer.setVertexInputEXT({}, {});
 }

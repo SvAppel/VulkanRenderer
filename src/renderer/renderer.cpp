@@ -2,6 +2,7 @@
 #include "device.h"
 #include "shader.h"
 #include "command.h"
+#include "synchronisation.h"
 
 #include <iostream>
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // In a .cpp file
@@ -47,6 +48,10 @@ Engine::Engine(GLFWwindow* window) : window(window)
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
 		frames[i].set_command_buffer(commandBuffer, shaders, swapchain.extent);
 	}
+
+	imageAuqiredSemaphore = make_semaphore(logicalDevice);
+	renderFinishedSemaphore = make_semaphore(logicalDevice);
+	renderFinishedFence = make_fence(logicalDevice);
 }
 
 Engine::~Engine()
@@ -207,19 +212,30 @@ void Engine::make_instance(const char* applicationName, std::deque<std::function
 
 void Engine::draw()
 {
-	uint32_t imageIndex{0};
 
+	logicalDevice.waitForFences(*renderFinishedFence, false, UINT32_MAX);
+	logicalDevice.resetFences(*renderFinishedFence);
+
+	uint32_t imageIndex = swapchain.chain.acquireNextImage(UINT32_MAX, imageAuqiredSemaphore).value;
+
+	vk::PipelineStageFlags waitDestinationStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput );
 	vk::SubmitInfo submitInfo
 	{
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = &*imageAuqiredSemaphore,
+		.pWaitDstStageMask = &waitDestinationStageMask,
 		.commandBufferCount = 1,
-		.pCommandBuffers = &*frames[0].commandBuffer
+		.pCommandBuffers = &*frames[imageIndex].commandBuffer,
+		.signalSemaphoreCount =  1,
+		.pSignalSemaphores = &*renderFinishedSemaphore	
 	};
 
-	graphicsQueue.submit(submitInfo);
-	graphicsQueue.waitIdle();
+	graphicsQueue.submit(submitInfo, renderFinishedFence);
 
 	vk::PresentInfoKHR presentInfo
 	{
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = &*renderFinishedSemaphore,
 		.swapchainCount = 1,
 		.pSwapchains = &*swapchain.chain,
 		.pImageIndices = &imageIndex
@@ -228,6 +244,4 @@ void Engine::draw()
 	vk::Result result = graphicsQueue.presentKHR(presentInfo);
 	if(result != vk::Result::eSuccess)
 		logger->print_error("Unable to present image!");
-
-	graphicsQueue.waitIdle();
 }
