@@ -102,7 +102,7 @@ void Logger::log(const vk::raii::PhysicalDevice& device)
 
 	vk::PhysicalDeviceProperties properties = device.getProperties();
 
-	std::cout << "Device name: " << properties.deviceName << std::endl;
+	std::cout << "Physical Device name: " << properties.deviceName << std::endl;
 
 	std::cout << "Device type: " << vk::to_string(properties.deviceType) << std::endl;
 }

@@ -71,6 +71,16 @@ public:
      */
     vk::Extent2D extent;
 
+    /**
+     * @brief Swapchain images to render to
+     */
+    std::vector<vk::Image> images;
+
+    /**
+     * @brief View of the swapchain images
+     */
+    std::vector<vk::raii::ImageView> imageViews;
+
 private:
 
     /**

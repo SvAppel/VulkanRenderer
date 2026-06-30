@@ -1,18 +1,27 @@
 #include "frame.h"
+#include "synchronisation.h"
 
-Frame::Frame(vk::Image image, vk::raii::Device& logicalDevice, vk::Format swapchainFormat): 
-    image(image)
+
+Frame::Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer): 
+    swapchain(swapchain)
 {
-    imageView = create_image_view(logicalDevice, image, swapchainFormat);
+    this->commandBuffer = std::move(commandBuffer);
 
+    rawShaders.reserve(shaders.size());
+    for (uint32_t i = 0; i < shaders.size(); i++)
+        rawShaders.push_back(shaders[i]);
+
+    imageAuqiredSemaphore = make_semaphore(logicalDevice);
+	renderFinishedSemaphore = make_semaphore(logicalDevice);
+	renderFinishedFence = make_fence(logicalDevice);
 }
 
-void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::vector<vk::raii::ShaderEXT>& shaders, vk::Extent2D frameSize)
+void Frame::record_command_buffer(uint32_t imageIndex)
 {
-    commandBuffer = std::move(newCommandBuffer);
+    commandBuffer.reset();
 
-    build_color_attachment();
-    build_rendering_info(frameSize);
+    build_color_attachment(imageIndex);
+    build_rendering_info();
 
     vk::CommandBufferBeginInfo beginInfo{};
 
@@ -20,7 +29,7 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
     
         transition_image_layout
         (
-            commandBuffer, image,
+            commandBuffer, swapchain.images[imageIndex],
             vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal,
             vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eColorAttachmentWrite,
             // INFO: This works but is inefficient. 
@@ -33,17 +42,12 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
         );
 
         //Instead of creating a static pipeline we setup the pipeline dynamically via command buffer instructions
-        set_dynamic_states(frameSize);
+        set_dynamic_states();
 
         commandBuffer.beginRenderingKHR(renderingInfo);
 
             vk::ShaderStageFlagBits stages[2] = {vk::ShaderStageFlagBits::eVertex, vk::ShaderStageFlagBits::eFragment};
-            //The RAII shaders cannot be passed into the command buffer as is. They need to be converted to a vector of raw handles first
-            //Command buffer recording methods take raw handles because they only record references, not ownership. 
-            //The RAII wrappers manage lifetime separately.
-            std::vector<vk::ShaderEXT> rawShaders(shaders.size());
-            for (uint32_t i = 0; i < shaders.size(); i++)
-            rawShaders[i] = shaders[i];
+
             
             commandBuffer.bindShadersEXT(stages, rawShaders);
 
@@ -53,7 +57,7 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
 
         transition_image_layout
         (
-            commandBuffer, image,
+            commandBuffer, swapchain.images[imageIndex],
             vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
             vk::AccessFlagBits2::eColorAttachmentWrite, vk::AccessFlagBits2::eNone,
             //vk::PipelineStageFlagBits2::eFragmentShader, vk::PipelineStageFlagBits2::eBottomOfPipe
@@ -63,11 +67,11 @@ void Frame::set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::v
     commandBuffer.end();
 }
 
-void Frame::build_color_attachment()
+void Frame::build_color_attachment(uint32_t imageIndex)
 {
     vk::RenderingAttachmentInfoKHR tempColorAttachment
     {
-        .imageView = imageView,
+        .imageView = swapchain.imageViews[imageIndex],
         .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eStore,
@@ -77,11 +81,11 @@ void Frame::build_color_attachment()
     colorAttachment = tempColorAttachment;
 }
 
-void Frame::build_rendering_info(vk::Extent2D frameSize)
+void Frame::build_rendering_info()
 {
     vk::RenderingInfoKHR tempRenderingInfo
     {
-        .renderArea = vk::Rect2D({0,0}, frameSize),
+        .renderArea = vk::Rect2D({0,0}, swapchain.extent),
         .layerCount = 1,
         //bitmask indicating the layers which will be rendered to
         .viewMask = 0,
@@ -92,18 +96,18 @@ void Frame::build_rendering_info(vk::Extent2D frameSize)
     renderingInfo = tempRenderingInfo;
 }
 
-void Frame::set_dynamic_states(vk::Extent2D frameSize)
+void Frame::set_dynamic_states()
 {
     vk::Viewport viewport
     {
         .x = 0.0f, .y = 0.0f,
-        .width = frameSize.width, .height = frameSize.height,
+        .width = (float)swapchain.extent.width, .height = (float)swapchain.extent.height,
         .minDepth = 0.0f, .maxDepth = 1.0f
 
     };
     commandBuffer.setViewportWithCount(viewport);
 
-    vk::Rect2D scissor = vk::Rect2D({0,0}, frameSize);
+    vk::Rect2D scissor = vk::Rect2D({0,0}, swapchain.extent);
     commandBuffer.setScissorWithCount(scissor);
 
     commandBuffer.setRasterizerDiscardEnable(0);

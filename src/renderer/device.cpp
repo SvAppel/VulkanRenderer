@@ -117,6 +117,7 @@ vk::raii::Device create_logical_device(vk::raii::PhysicalDevice physicalDevice, 
 {
     Logger* logger = Logger::get_logger();
     logger->print("Abstracting physical GPU to logical device!");
+    logger->log(physicalDevice);
 
     uint32_t graphicsIndex = findQueueFamilyIndex(physicalDevice, surface, vk::QueueFlagBits::eGraphics);
     float queuePriority = 1.0f;

@@ -23,7 +23,10 @@ Engine::Engine(GLFWwindow* window) : window(window)
 	surface = vk::raii::SurfaceKHR(instance, raw_surface);
 	logger->print("Successfully created vulkan surface!");
 
+	// The properties of the physical device are very verbose
+	logger->set_mode(false);
 	physicalDevice = choose_physical_device(instance);
+	logger->set_mode(true);
 	logicalDevice = create_logical_device(physicalDevice, surface);
 	uint32_t graphicsQueueFamilyIndex = findQueueFamilyIndex(physicalDevice, surface, vk::QueueFlagBits::eGraphics);
 	graphicsQueue = logicalDevice.getQueue(graphicsQueueFamilyIndex, 0);
@@ -32,26 +35,18 @@ Engine::Engine(GLFWwindow* window) : window(window)
 	glfwGetWindowSize(window, &width, &height);
 	swapchain.build(logicalDevice, physicalDevice, surface, width, height);
 
-	std::vector<vk::Image> swapchainImages = swapchain.chain.getImages();
-
-	for(uint32_t i = 0; i<swapchainImages.size(); i++)
-	{
-		frames.push_back(Frame(swapchainImages[i], logicalDevice, swapchain.format.format));
-	}
-
+	//The logger would print the preprocessed and compiled shader code
+	logger->set_mode(false);
 	shaders = make_shader_objects(logicalDevice, "shader");
+	logger->set_mode(true);
 
 	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
 
-	for(uint32_t i = 0; i < swapchainImages.size(); i++)
+	for(uint32_t i = 0; i < 2; i++)
 	{
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
-		frames[i].set_command_buffer(commandBuffer, shaders, swapchain.extent);
+		frames.push_back(Frame(swapchain, logicalDevice, shaders, commandBuffer));
 	}
-
-	imageAuqiredSemaphore = make_semaphore(logicalDevice);
-	renderFinishedSemaphore = make_semaphore(logicalDevice);
-	renderFinishedFence = make_fence(logicalDevice);
 }
 
 Engine::~Engine()
@@ -212,30 +207,35 @@ void Engine::make_instance(const char* applicationName, std::deque<std::function
 
 void Engine::draw()
 {
+	Frame& frame = frames[frameIndex];
 
-	logicalDevice.waitForFences(*renderFinishedFence, false, UINT32_MAX);
-	logicalDevice.resetFences(*renderFinishedFence);
+	vk::Result waitResult = logicalDevice.waitForFences(*frame.renderFinishedFence, false, UINT32_MAX);
+	if(waitResult != vk::Result::eSuccess)
+		logger->print_error("Failed to wait for fence!");
+	logicalDevice.resetFences(*frame.renderFinishedFence);
 
-	uint32_t imageIndex = swapchain.chain.acquireNextImage(UINT32_MAX, imageAuqiredSemaphore).value;
+	uint32_t imageIndex = swapchain.chain.acquireNextImage(UINT32_MAX, frame.imageAuqiredSemaphore).value;
+
+	frame.record_command_buffer(imageIndex);
 
 	vk::PipelineStageFlags waitDestinationStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput );
 	vk::SubmitInfo submitInfo
 	{
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &*imageAuqiredSemaphore,
+		.pWaitSemaphores = &*frame.imageAuqiredSemaphore,
 		.pWaitDstStageMask = &waitDestinationStageMask,
 		.commandBufferCount = 1,
-		.pCommandBuffers = &*frames[imageIndex].commandBuffer,
+		.pCommandBuffers = &*frame.commandBuffer,
 		.signalSemaphoreCount =  1,
-		.pSignalSemaphores = &*renderFinishedSemaphore	
+		.pSignalSemaphores = &*frame.renderFinishedSemaphore	
 	};
 
-	graphicsQueue.submit(submitInfo, renderFinishedFence);
+	graphicsQueue.submit(submitInfo, frame.renderFinishedFence);
 
 	vk::PresentInfoKHR presentInfo
 	{
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &*renderFinishedSemaphore,
+		.pWaitSemaphores = &*frame.renderFinishedSemaphore,
 		.swapchainCount = 1,
 		.pSwapchains = &*swapchain.chain,
 		.pImageIndices = &imageIndex
@@ -244,4 +244,6 @@ void Engine::draw()
 	vk::Result result = graphicsQueue.presentKHR(presentInfo);
 	if(result != vk::Result::eSuccess)
 		logger->print_error("Unable to present image!");
+
+	frameIndex = frameIndex ^ 1;
 }

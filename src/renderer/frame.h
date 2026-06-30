@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "image.h"
+#include "swapchain.h"
 
 /**
  * @brief Holds all the state used in one rendering/presentation operation.
@@ -11,16 +12,14 @@
 class Frame
 {
 public:
-    Frame(vk::Image image, vk::raii::Device& logicalDevice, vk::Format swapchainFormat);
+    Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer);
 
     /**
      * @brief Set (and record) the command buffer
      * 
-     * @param newCommandBuffer: The command buffer to record to
-     * @param shaders: Shader objects to use
-     * @param framesize: size of the screen
+     * @param imageIndex: The index of the current image
      */
-    void set_command_buffer(vk::raii::CommandBuffer& newCommandBuffer, std::vector<vk::raii::ShaderEXT>& shaders, vk::Extent2D frameSize);
+    void record_command_buffer(uint32_t imageIndex);
 
     /**
      * @brief Allocate command buffer
@@ -33,40 +32,47 @@ public:
     vk::raii::CommandBuffer allocate_command_buffer(vk::raii::Device& logicalDevice, vk::raii::CommandPool commandPool);
 
     /**
-     * @brief Swapchain image to render to
-     */
-    vk::Image image;
-
-    /**
-     * @brief View of the swapchain image
-     */
-    vk::raii::ImageView imageView = nullptr;
-
-    /**
      * @brief For recording drawing commands
      */
     vk::raii::CommandBuffer commandBuffer = nullptr;
+
+
+    Swapchain& swapchain;
+
+    std::vector<vk::ShaderEXT> rawShaders;
+
+    /**
+	 * @brief A Semaphore for GPU synchronisation after the image has been aquired
+	 */
+	vk::raii::Semaphore imageAuqiredSemaphore = nullptr;
+
+	/**
+	 * @brief A Semaphore for GPU synchronisation after the render has finished
+	 */
+	vk::raii::Semaphore renderFinishedSemaphore = nullptr;
+
+	/**
+	 * @brief A fence for CPU synchronisation after the render has finished
+	 */
+	vk::raii::Fence renderFinishedFence = nullptr;
+
 
 private:
 
     /**
      * @brief Build a description of the color attachment
      */
-    void build_color_attachment();
+    void build_color_attachment(uint32_t imageIndex);
 
     /**
      * @brief Build a description of the rendering info
-     * 
-     * @param frameSize: Size of the screen
      */
-    void build_rendering_info(vk::Extent2D frameSize);
+    void build_rendering_info();
 
     /**
      * @brief Dynamically set the normally static pipeline parts within the command buffer
-     * 
-     * @param frameSize: Size of the screen
      */
-    void set_dynamic_states(vk::Extent2D frameSize);
+    void set_dynamic_states();
 
     vk::RenderingInfoKHR renderingInfo = {};
 

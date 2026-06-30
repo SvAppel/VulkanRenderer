@@ -1,6 +1,7 @@
 #include "swapchain.h"
 
 #include "../logging/logger.h"
+#include "image.h"
 
 
 void Swapchain::build(vk::raii::Device& logicalDevice, vk::raii::PhysicalDevice physicalDevice, vk::raii::SurfaceKHR& surface, uint32_t width, uint32_t height)
@@ -33,6 +34,14 @@ void Swapchain::build(vk::raii::Device& logicalDevice, vk::raii::PhysicalDevice 
     swapChainCreatInfo.oldSwapchain = nullptr;
 
     chain = vk::raii::SwapchainKHR(logicalDevice, swapChainCreatInfo);
+
+    images = chain.getImages();
+
+    for(uint32_t i = 0; i<images.size(); i++)
+    {
+        //vk::raii::ImageView imageView = create_image_view(logicalDevice, images[i], format.format);
+        imageViews.push_back(create_image_view(logicalDevice, images[i], format.format));
+    }
 
     logger->print("Successfully created swapchain!");
 }
