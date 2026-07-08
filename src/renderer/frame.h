@@ -1,10 +1,10 @@
 #pragma once
 
-#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 
 #include "image.h"
 #include "swapchain.h"
+#include "../factories/mesh_factory.h"
 
 /**
  * @brief Holds all the state used in one rendering/presentation operation.
@@ -12,7 +12,14 @@
 class Frame
 {
 public:
-    Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer);
+    Frame
+    (
+        Swapchain& swapchain, 
+        vk::raii::Device& logicalDevice, 
+        std::vector<vk::raii::ShaderEXT>& shaders, 
+        vk::raii::CommandBuffer& commandBuffer,
+        Mesh* triangleMesh
+    );
 
     /**
      * @brief Set (and record) the command buffer
@@ -77,4 +84,6 @@ private:
     vk::RenderingInfoKHR renderingInfo = {};
 
     vk::RenderingAttachmentInfoKHR colorAttachment = {};
+
+    Mesh* triangleMesh = nullptr;
 };

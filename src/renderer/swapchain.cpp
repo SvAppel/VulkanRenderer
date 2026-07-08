@@ -46,6 +46,37 @@ void Swapchain::build(vk::raii::Device& logicalDevice, vk::raii::PhysicalDevice 
     logger->print("Successfully created swapchain!");
 }
 
+void Swapchain::rebuild(vk::raii::Device& logicalDevice, vk::raii::PhysicalDevice physicalDevice, vk::raii::SurfaceKHR& surface, GLFWwindow* window)
+{
+    Logger* logger = Logger::get_logger();
+    logger->print("Rebuilding the swapchain.");
+
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    while(width == 0 || height == 0)
+    {
+        logger->print("Window minimized");
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    logger->set_mode(false);
+
+    logicalDevice.waitIdle();
+    cleanupSwapchain();
+
+    build(logicalDevice, physicalDevice, surface, width, height);
+    logger->set_mode(true);
+}
+
+void Swapchain::cleanupSwapchain()
+{
+    images.clear();
+    imageViews.clear();
+
+    chain = nullptr;
+}
+
 SurfaceDetails Swapchain::query_surface_support(vk::raii::PhysicalDevice physicalDevice, vk::raii::SurfaceKHR& surface)
 {
     Logger* logger = Logger::get_logger();

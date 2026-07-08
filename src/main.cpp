@@ -3,7 +3,6 @@
 #include "renderer/renderer.h"
 #include "controller/app.h"
 
-//#include <vulkan/vulkan_raii.hpp>
 #include "GLFW/include/GLFW/glfw3.h"
 
 #include <memory>
@@ -39,6 +38,7 @@ int main()
 
 	done = true;
 	render_thread.join();
+	glfwDestroyWindow(window);
 	glfwTerminate();
 
 	return 0;

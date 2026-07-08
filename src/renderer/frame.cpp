@@ -1,11 +1,13 @@
 #include "frame.h"
 #include "synchronisation.h"
+#include "../factories/mesh_factory.h"
 
 
-Frame::Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer): 
+Frame::Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer, Mesh* triangleMesh): 
     swapchain(swapchain)
 {
     this->commandBuffer = std::move(commandBuffer);
+    this->triangleMesh = triangleMesh;
 
     rawShaders.reserve(shaders.size());
     for (uint32_t i = 0; i < shaders.size(); i++)
@@ -50,6 +52,9 @@ void Frame::record_command_buffer(uint32_t imageIndex)
 
             
             commandBuffer.bindShadersEXT(stages, rawShaders);
+
+            //Bind triangle mesh
+            commandBuffer.bindVertexBuffers(0, *triangleMesh->buffer, triangleMesh->offset);
 
             commandBuffer.draw(3, 1, 0, 0);
 
@@ -98,6 +103,12 @@ void Frame::build_rendering_info()
 
 void Frame::set_dynamic_states()
 {
+    vk::VertexInputBindingDescription2EXT binding = Vertex::getBindingDescription();
+    std::vector<vk::VertexInputAttributeDescription2EXT> attributes = Vertex::getAttributeDescriptions();
+
+    commandBuffer.setVertexInputEXT(binding, attributes);
+
+
     vk::Viewport viewport
     {
         .x = 0.0f, .y = 0.0f,
@@ -140,6 +151,4 @@ void Frame::set_dynamic_states()
         | vk::ColorComponentFlagBits::eB
         | vk::ColorComponentFlagBits::eA;
     commandBuffer.setColorWriteMaskEXT(0, colorWriteMask);
-
-    commandBuffer.setVertexInputEXT({}, {});
 }

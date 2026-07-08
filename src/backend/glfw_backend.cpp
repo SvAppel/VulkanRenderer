@@ -1,5 +1,3 @@
-#pragma once
-
 #include "glfw_backend.h"
 #include "../logging/logger.h"
 
@@ -13,7 +11,7 @@ GLFWwindow* build_window(int width, int height, const char* name)
 	
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	GLFWwindow* window = glfwCreateWindow(width, height, name, nullptr, nullptr);
 	if (window) 

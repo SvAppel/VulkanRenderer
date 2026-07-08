@@ -1,7 +1,7 @@
 #pragma once
 
-#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
+#include "GLFW/include/GLFW/glfw3.h"
 
 #include <deque>
 #include <functional>
@@ -50,6 +50,26 @@ public:
         vk::raii::SurfaceKHR& surface,
         uint32_t width, uint32_t height
     );
+
+    /**
+     * @brief Recreate a new Swapchain object
+     * 
+     * @param logicalDevice: Vulkan device
+     * @param physicalDevice: Physical device
+     * @param surface: The window surface to present to
+     * @param window: the GLFW window
+     */
+    void rebuild(
+        vk::raii::Device& logicalDevice,
+        vk::raii::PhysicalDevice physicalDevice,
+        vk::raii::SurfaceKHR& surface,
+        GLFWwindow* window
+    );
+
+    /**
+     * @brief Cleanup the swapchain ressources
+     */
+    void cleanupSwapchain();
 
     /**
      * @brief The number of images

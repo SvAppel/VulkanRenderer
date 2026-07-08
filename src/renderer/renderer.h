@@ -1,20 +1,22 @@
 #pragma once
 
 #include "../logging/logger.h"
+#include "../factories/mesh_factory.h"
 #include "frame.h"
 #include "swapchain.h"
 
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/include/GLFW/glfw3.h"
-
-#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
 #include <functional>
 
 #include "shaderc/shaderc.h"
+
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 
 class Engine 
 {
@@ -109,6 +111,8 @@ private:
 	 */
 	vk::raii::Device logicalDevice = nullptr;
 
+	//VMAAllocator
+
 	/**
 	 * @brief Queues for work submission
 	 */
@@ -138,6 +142,8 @@ private:
 	 * @brief The command pool
 	 */
 	vk::raii::CommandPool commandPool = nullptr;
+
+	Mesh triangleMesh;
 
 	uint32_t frameIndex = 0;
 

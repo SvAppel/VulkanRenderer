@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_to_string.hpp>

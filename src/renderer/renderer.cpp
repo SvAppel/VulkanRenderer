@@ -42,10 +42,12 @@ Engine::Engine(GLFWwindow* window) : window(window)
 
 	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
 
-	for(uint32_t i = 0; i < 2; i++)
+	triangleMesh = build_triangle(physicalDevice, logicalDevice, commandPool, graphicsQueue);
+
+	for(uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
-		frames.push_back(Frame(swapchain, logicalDevice, shaders, commandBuffer));
+		frames.push_back(Frame(swapchain, logicalDevice, shaders, commandBuffer, &triangleMesh));
 	}
 }
 
@@ -210,8 +212,11 @@ void Engine::draw()
 	Frame& frame = frames[frameIndex];
 
 	vk::Result waitResult = logicalDevice.waitForFences(*frame.renderFinishedFence, false, UINT32_MAX);
-	if(waitResult != vk::Result::eSuccess)
-		logger->print_error("Failed to wait for fence!");
+	if(waitResult == vk::Result::eErrorOutOfDateKHR || waitResult == vk::Result::eSuboptimalKHR)
+	{
+		swapchain.rebuild(logicalDevice, physicalDevice, surface, window);
+	}
+
 	logicalDevice.resetFences(*frame.renderFinishedFence);
 
 	uint32_t imageIndex = swapchain.chain.acquireNextImage(UINT32_MAX, frame.imageAuqiredSemaphore).value;
@@ -242,8 +247,10 @@ void Engine::draw()
 	};
 
 	vk::Result result = graphicsQueue.presentKHR(presentInfo);
-	if(result != vk::Result::eSuccess)
-		logger->print_error("Unable to present image!");
+	if(result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+	{
+		swapchain.rebuild(logicalDevice, physicalDevice, surface, window);
+	}
 
-	frameIndex = frameIndex ^ 1;
+	frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
