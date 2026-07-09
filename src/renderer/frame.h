@@ -18,7 +18,7 @@ public:
         vk::raii::Device& logicalDevice, 
         std::vector<vk::raii::ShaderEXT>& shaders, 
         vk::raii::CommandBuffer& commandBuffer,
-        Mesh* triangleMesh
+        Mesh* mesh
     );
 
     /**
@@ -85,5 +85,5 @@ private:
 
     vk::RenderingAttachmentInfoKHR colorAttachment = {};
 
-    Mesh* triangleMesh = nullptr;
+    Mesh* mesh = nullptr;
 };

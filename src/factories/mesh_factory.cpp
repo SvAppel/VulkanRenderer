@@ -10,30 +10,53 @@
 //     this->buffer = std::move(buffer);
 // }
 
-Mesh build_triangle(vk::raii::PhysicalDevice& physicalDevice, vk::raii::Device& logicalDevice, vk::raii::CommandPool& commandPool, vk::raii::Queue& queue)
+Mesh build_mesh(vk::raii::PhysicalDevice& physicalDevice, vk::raii::Device& logicalDevice, vk::raii::CommandPool& commandPool, vk::raii::Queue& queue)
 {
-    const std::vector<Vertex> vertices = 
-    {
-        {{-0.75f, 0.75f}, {1.0f, 0.0f, 0.0f}},
-        {{0.75f, 0.75f}, {0.0f, 1.0f, 0.0f}},
-        {{0.0f, -0.75f}, {0.0f, 0.0f, 1.0f}}
+    const std::vector<Vertex> vertices = {
+        {{-0.75f, -0.75f}, {1.0f, 0.0f, 0.0f}},
+        {{0.75f, -0.75f}, {0.0f, 1.0f, 0.0f}},
+        {{0.75f, 0.75f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.75f, 0.75f}, {1.0f, 1.0f, 1.0f}}
     };
 
-    //Create the staging buffer visible to the CPU and GPU
-    vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-    auto [stagingBuffer, stagingMemory] = 
-        create_buffer(physicalDevice, logicalDevice, bufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    const std::vector<uint32_t> indices = {
+        0, 1, 2, 2, 3, 0
+    };
 
-    void *dataStaging = stagingMemory.mapMemory(0, bufferSize);
-    memcpy(dataStaging, vertices.data(), bufferSize);
-    stagingMemory.unmapMemory();
+    Mesh mesh;
+    mesh.vertexCount = vertices.size();
+    mesh.indexCount = indices.size();
+
+    //Create Vertex Buffer
+    //Create the staging buffer visible to the CPU and GPU
+    vk::DeviceSize vertexBufferSize = sizeof(vertices[0]) * vertices.size();
+    auto [vertexStagingBuffer, vertexStagingMemory] = 
+        create_buffer(physicalDevice, logicalDevice, vertexBufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    void *vertexDataStaging = vertexStagingMemory.mapMemory(0, vertexBufferSize);
+    memcpy(vertexDataStaging, vertices.data(), vertexBufferSize);
+    vertexStagingMemory.unmapMemory();
 
     //Create the vertex buffer only visible to the GPU but much more optimized for rendering
-    Mesh mesh;
-    std::tie(mesh.buffer, mesh.memory) = 
-        create_buffer(physicalDevice, logicalDevice, bufferSize, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+    std::tie(mesh.vertexBuffer, mesh.vertexBufferMemory) = 
+        create_buffer(physicalDevice, logicalDevice, vertexBufferSize, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
     
-    copy_buffer(logicalDevice, stagingBuffer, mesh.buffer, bufferSize, commandPool, queue);
+    copy_buffer(logicalDevice, vertexStagingBuffer, mesh.vertexBuffer, vertexBufferSize, commandPool, queue);
+
+    //Create Index Buffer
+    vk::DeviceSize indexBufferSize = sizeof(indices[0]) * indices.size();
+    auto [indexStagingBuffer, indexStagingBufferMemory] = 
+        create_buffer(physicalDevice, logicalDevice, indexBufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    void* indexDataStaging = indexStagingBufferMemory.mapMemory(0, indexBufferSize);
+    memcpy(indexDataStaging, indices.data(), indexBufferSize);
+    indexStagingBufferMemory.unmapMemory();
+
+    std::tie(mesh.indexBuffer, mesh.indexBufferMemory) = 
+        create_buffer(physicalDevice, logicalDevice, indexBufferSize, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+    copy_buffer(logicalDevice, indexStagingBuffer, mesh.indexBuffer, indexBufferSize, commandPool, queue);
 
     return mesh;
 }

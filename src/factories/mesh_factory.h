@@ -46,12 +46,17 @@ struct Mesh
     // Mesh(vk::raii::Buffer buffer, vk::DeviceSize offset);
     //Mesh();
 
-    vk::raii::Buffer buffer = nullptr;
-    vk::raii::DeviceMemory memory = nullptr;
-    vk::DeviceSize offset;
+    vk::raii::Buffer vertexBuffer = nullptr;
+    vk::raii::DeviceMemory vertexBufferMemory = nullptr;
+    vk::DeviceSize vertexOffset = 0;
+    uint32_t vertexCount = 0;
+    vk::raii::Buffer indexBuffer = nullptr;
+    vk::raii::DeviceMemory indexBufferMemory = nullptr;
+    vk::DeviceSize indexOffset = 0;
+    uint32_t indexCount = 0;
 };
 
-Mesh build_triangle(vk::raii::PhysicalDevice& physicalDevice, vk::raii::Device& logicalDevice, vk::raii::CommandPool& commandPool, vk::raii::Queue& queue);
+Mesh build_mesh(vk::raii::PhysicalDevice& physicalDevice, vk::raii::Device& logicalDevice, vk::raii::CommandPool& commandPool, vk::raii::Queue& queue);
 
 uint32_t find_memory_type(vk::raii::PhysicalDevice& physicalDevice, uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 

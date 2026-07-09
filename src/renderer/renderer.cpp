@@ -42,12 +42,12 @@ Engine::Engine(GLFWwindow* window) : window(window)
 
 	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
 
-	triangleMesh = build_triangle(physicalDevice, logicalDevice, commandPool, graphicsQueue);
+	mesh = build_mesh(physicalDevice, logicalDevice, commandPool, graphicsQueue);
 
 	for(uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
-		frames.push_back(Frame(swapchain, logicalDevice, shaders, commandBuffer, &triangleMesh));
+		frames.push_back(Frame(swapchain, logicalDevice, shaders, commandBuffer, &mesh));
 	}
 }
 

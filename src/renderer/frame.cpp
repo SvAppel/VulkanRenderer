@@ -3,11 +3,11 @@
 #include "../factories/mesh_factory.h"
 
 
-Frame::Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer, Mesh* triangleMesh): 
+Frame::Frame(Swapchain& swapchain, vk::raii::Device& logicalDevice, std::vector<vk::raii::ShaderEXT>& shaders, vk::raii::CommandBuffer& commandBuffer, Mesh* mesh): 
     swapchain(swapchain)
 {
     this->commandBuffer = std::move(commandBuffer);
-    this->triangleMesh = triangleMesh;
+    this->mesh = mesh;
 
     rawShaders.reserve(shaders.size());
     for (uint32_t i = 0; i < shaders.size(); i++)
@@ -54,9 +54,10 @@ void Frame::record_command_buffer(uint32_t imageIndex)
             commandBuffer.bindShadersEXT(stages, rawShaders);
 
             //Bind triangle mesh
-            commandBuffer.bindVertexBuffers(0, *triangleMesh->buffer, triangleMesh->offset);
+            commandBuffer.bindVertexBuffers(0, *mesh->vertexBuffer, mesh->vertexOffset);
+            commandBuffer.bindIndexBuffer(*mesh->indexBuffer, mesh->indexOffset, vk::IndexType::eUint32);
 
-            commandBuffer.draw(3, 1, 0, 0);
+            commandBuffer.drawIndexed(mesh->indexCount, 1, 0, mesh->indexOffset, 0);
 
         commandBuffer.endRenderingKHR();
 

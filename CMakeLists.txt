@@ -17,6 +17,7 @@ add_executable(VulkanRenderer
 	src/main.cpp
 	src/backend/glfw_backend.cpp
 	src/backend/file.cpp
+	src/backend/vma_usage.cpp
 	src/controller/app.cpp
 	src/logging/logger.cpp
 	src/renderer/renderer.cpp

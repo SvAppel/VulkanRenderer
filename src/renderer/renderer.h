@@ -12,6 +12,7 @@
 
 #include <deque>
 #include <functional>
+//#include <vma/vk_mem_alloc.h>
 
 #include "shaderc/shaderc.h"
 
@@ -143,7 +144,7 @@ private:
 	 */
 	vk::raii::CommandPool commandPool = nullptr;
 
-	Mesh triangleMesh;
+	Mesh mesh;
 
 	uint32_t frameIndex = 0;
 
