@@ -140,9 +140,21 @@ private:
 	std::vector<vk::raii::ShaderEXT> shaders;
 
 	/**
-	 * @brief The command pool
+	 * @brief Memory pool for command buffer allocations
 	 */
 	vk::raii::CommandPool commandPool = nullptr;
+
+	/**
+	 * @brief Describes the basic shape of the descriptor set layout
+	 */
+	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
+
+	/**
+	 * @brief Describes the descriptor sets used by a pipeline
+	 */
+	vk::raii::PipelineLayout pipelineLayout = nullptr;
+
+	vk::raii::DescriptorPool descriptorPool = nullptr;
 
 	Mesh mesh;
 

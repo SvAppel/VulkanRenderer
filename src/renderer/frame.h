@@ -15,9 +15,13 @@ public:
     Frame
     (
         Swapchain& swapchain, 
+        vk::raii::PhysicalDevice& physicalDevice,
         vk::raii::Device& logicalDevice, 
         std::vector<vk::raii::ShaderEXT>& shaders, 
         vk::raii::CommandBuffer& commandBuffer,
+        vk::raii::DescriptorSetLayout& descriptorSetLayout,
+        vk::raii::DescriptorPool& descriptorPool,
+        vk::raii::PipelineLayout& pipelineLayout,
         Mesh* mesh
     );
 
@@ -28,15 +32,7 @@ public:
      */
     void record_command_buffer(uint32_t imageIndex);
 
-    /**
-     * @brief Allocate command buffer
-     * 
-     * @param logicalDevice: The vulkan device
-     * @param commandPool: The command pool to allocate from
-     * 
-     * @return The allocated command buffer
-     */
-    vk::raii::CommandBuffer allocate_command_buffer(vk::raii::Device& logicalDevice, vk::raii::CommandPool commandPool);
+    void update_uniform_buffer();
 
     /**
      * @brief For recording drawing commands
@@ -47,6 +43,21 @@ public:
     Swapchain& swapchain;
 
     std::vector<vk::ShaderEXT> rawShaders;
+
+
+
+    vk::raii::Buffer uniformBuffer = nullptr;
+    vk::raii::DeviceMemory uniformBufferMemory = nullptr;
+    void* uniformBufferMapped = nullptr;
+
+    vk::raii::DescriptorSetLayout& descriptorSetLayout;
+    
+    vk::raii::DescriptorPool& descriptorPool;
+    
+    vk::raii::PipelineLayout& pipelineLayout;
+    
+    vk::raii::DescriptorSet descriptorSet = nullptr;
+
 
     /**
 	 * @brief A Semaphore for GPU synchronisation after the image has been aquired

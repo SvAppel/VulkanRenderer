@@ -6,6 +6,22 @@
 #include <functional>
 #include <shaderc/shaderc.hpp>
 
+class PipelineLayoutManager
+{
+public:
+    PipelineLayoutManager(vk::raii::Device& logicalDevice);
+
+    vk::raii::PipelineLayout build_layout();
+
+    void add(vk::raii::DescriptorSetLayout& descriptorSetLayout);
+
+private:
+    vk::raii::Device& logicalDevice;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+
+    void reset_layout();
+};
+
 /**
  * @brief generic bundle for shaderc compulation operations
  */
@@ -57,4 +73,4 @@ std::vector<uint32_t> compile_file(CompilationInfo& info);
  * 
  * @return vk::ShaderExt: The created shader object
  */
-std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDevice, const char* name);
+std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDevice, const char* name, vk::raii::DescriptorSetLayout& pLayout);

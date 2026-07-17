@@ -3,6 +3,7 @@
 #include "shader.h"
 #include "command.h"
 #include "synchronisation.h"
+#include "descriptors.h"
 
 #include <iostream>
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // In a .cpp file
@@ -35,19 +36,30 @@ Engine::Engine(GLFWwindow* window) : window(window)
 	glfwGetWindowSize(window, &width, &height);
 	swapchain.build(logicalDevice, physicalDevice, surface, width, height);
 
+	DescriptorManager descriptorManager(logicalDevice);
+	descriptorManager.add_descriptor(vk::ShaderStageFlagBits::eVertex, vk::DescriptorType::eUniformBuffer);
+	descriptorSetLayout = descriptorManager.build_layout();
+
+	PipelineLayoutManager pipelineLayoutManager(logicalDevice);
+	pipelineLayoutManager.add(descriptorSetLayout);
+	pipelineLayout = pipelineLayoutManager.build_layout();
+
 	//The logger would print the preprocessed and compiled shader code
 	logger->set_mode(false);
-	shaders = make_shader_objects(logicalDevice, "shader");
+	shaders = make_shader_objects(logicalDevice, "shader", descriptorSetLayout);
 	logger->set_mode(true);
 
 	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
 
 	mesh = build_mesh(physicalDevice, logicalDevice, commandPool, graphicsQueue);
 
+	std::vector<vk::DescriptorType> descriptorTypes = {vk::DescriptorType::eUniformBuffer};
+	descriptorPool = descriptorManager.make_descriptor_pool(MAX_FRAMES_IN_FLIGHT, descriptorTypes.size(), descriptorTypes.data());
+
 	for(uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
-		frames.push_back(Frame(swapchain, logicalDevice, shaders, commandBuffer, &mesh));
+		frames.push_back(Frame(swapchain, physicalDevice, logicalDevice, shaders, commandBuffer, descriptorSetLayout, descriptorPool, pipelineLayout, &mesh));
 	}
 }
 
@@ -217,10 +229,11 @@ void Engine::draw()
 		swapchain.rebuild(logicalDevice, physicalDevice, surface, window);
 	}
 
+	frame.update_uniform_buffer();
+
 	logicalDevice.resetFences(*frame.renderFinishedFence);
 
 	uint32_t imageIndex = swapchain.chain.acquireNextImage(UINT32_MAX, frame.imageAuqiredSemaphore).value;
-
 	frame.record_command_buffer(imageIndex);
 
 	vk::PipelineStageFlags waitDestinationStageMask( vk::PipelineStageFlagBits::eColorAttachmentOutput );

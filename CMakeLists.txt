@@ -29,6 +29,7 @@ add_executable(VulkanRenderer
 	src/renderer/command.cpp
 	src/renderer/synchronisation.cpp
 	src/renderer/buffer.cpp
+	src/renderer/descriptors.cpp
 	src/factories/mesh_factory.cpp
 )
 
