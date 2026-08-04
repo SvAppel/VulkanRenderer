@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan_raii.hpp>
-#include "GLFW/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 #include <deque>
 #include <functional>

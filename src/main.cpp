@@ -3,7 +3,7 @@
 #include "renderer/renderer.h"
 #include "controller/app.h"
 
-#include "GLFW/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 #include <memory>
 #include <iostream>

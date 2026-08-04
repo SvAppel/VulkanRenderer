@@ -1,7 +1,7 @@
 #include "glfw_backend.h"
 #include "../logging/logger.h"
 
-#include "GLFW/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 #include <sstream>
 

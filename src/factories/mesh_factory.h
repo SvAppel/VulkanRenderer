@@ -9,6 +9,7 @@ struct Vertex
 {
     glm::vec2 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 
     static vk::VertexInputBindingDescription2EXT getBindingDescription()
     {
@@ -25,7 +26,7 @@ struct Vertex
 
     static std::vector<vk::VertexInputAttributeDescription2EXT> getAttributeDescriptions()
     {
-        std::vector<vk::VertexInputAttributeDescription2EXT> attributes(2);
+        std::vector<vk::VertexInputAttributeDescription2EXT> attributes(3);
         attributes[0].location = 0;
         attributes[0].binding = 0;
         attributes[0].format = vk::Format::eR32G32Sfloat;
@@ -35,6 +36,11 @@ struct Vertex
         attributes[1].binding = 0;
         attributes[1].format = vk::Format::eR32G32B32Sfloat;
         attributes[1].offset = offsetof(Vertex, color);
+
+        attributes[2].location = 2;
+        attributes[2].binding = 0;
+        attributes[2].format = vk::Format::eR32G32Sfloat;
+        attributes[2].offset = offsetof(Vertex, texCoord);
 
         return attributes;
     }
@@ -58,5 +64,5 @@ struct Mesh
 
 Mesh build_mesh(vk::raii::PhysicalDevice& physicalDevice, vk::raii::Device& logicalDevice, vk::raii::CommandPool& commandPool, vk::raii::Queue& queue);
 
-uint32_t find_memory_type(vk::raii::PhysicalDevice& physicalDevice, uint32_t typeFilter, vk::MemoryPropertyFlags properties);
+//uint32_t find_memory_type(vk::raii::PhysicalDevice& physicalDevice, uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 

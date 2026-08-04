@@ -6,6 +6,7 @@
 #include "descriptors.h"
 
 #include <iostream>
+#include <memory>
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE; // In a .cpp file
 //#include <vulkan/vulkan_raii.hpp>
 
@@ -36,30 +37,45 @@ Engine::Engine(GLFWwindow* window) : window(window)
 	glfwGetWindowSize(window, &width, &height);
 	swapchain.build(logicalDevice, physicalDevice, surface, width, height);
 
+	// Create per Frame Layouts and Pools
 	DescriptorManager descriptorManager(logicalDevice);
 	descriptorManager.add_descriptor(vk::ShaderStageFlagBits::eVertex, vk::DescriptorType::eUniformBuffer);
-	descriptorSetLayout = descriptorManager.build_layout();
+	frameDescriptorSetLayout = descriptorManager.build_layout();
+
+	std::vector<vk::DescriptorType> frameDescriptorTypes = {vk::DescriptorType::eUniformBuffer};
+	frameDescriptorPool = descriptorManager.make_descriptor_pool(MAX_FRAMES_IN_FLIGHT, frameDescriptorTypes.size(), frameDescriptorTypes.data());
+
+	// Create Texture Layouts and Pools
+	descriptorManager.add_descriptor(vk::ShaderStageFlagBits::eFragment, vk::DescriptorType::eCombinedImageSampler);
+	meshDescriptorSetLayout = descriptorManager.build_layout();
+
+	std::vector<vk::DescriptorType> meshDescriptorTypes = {vk::DescriptorType::eCombinedImageSampler};
+	//For descriptorSetCount: how many textures do we have?
+	meshDescriptorPool = descriptorManager.make_descriptor_pool(1, meshDescriptorTypes.size(), meshDescriptorTypes.data());
 
 	PipelineLayoutManager pipelineLayoutManager(logicalDevice);
-	pipelineLayoutManager.add(descriptorSetLayout);
+	pipelineLayoutManager.add_push_constant(vk::ShaderStageFlagBits::eVertex, sizeof(ObjectDataConstants));
+	pipelineLayoutManager.add(frameDescriptorSetLayout);
+	pipelineLayoutManager.add(meshDescriptorSetLayout);
 	pipelineLayout = pipelineLayoutManager.build_layout();
 
 	//The logger would print the preprocessed and compiled shader code
 	logger->set_mode(false);
-	shaders = make_shader_objects(logicalDevice, "shader", descriptorSetLayout);
+	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {frameDescriptorSetLayout, meshDescriptorSetLayout};
+	shaders = make_shader_objects(logicalDevice, "shader", descriptorLayouts, pipelineLayoutManager.pushConstants);
 	logger->set_mode(true);
 
 	commandPool = make_command_pool(logicalDevice, graphicsQueueFamilyIndex);
 
 	mesh = build_mesh(physicalDevice, logicalDevice, commandPool, graphicsQueue);
 
-	std::vector<vk::DescriptorType> descriptorTypes = {vk::DescriptorType::eUniformBuffer};
-	descriptorPool = descriptorManager.make_descriptor_pool(MAX_FRAMES_IN_FLIGHT, descriptorTypes.size(), descriptorTypes.data());
+	//TODO: make new or use existing commandbuffer, replace frameDescriptorSetLayout and frameDescriptorPool with the proper ones
+	material = std::make_unique<Texture>(physicalDevice, logicalDevice, commandPool, graphicsQueue, meshDescriptorSetLayout, meshDescriptorPool, "../textures/benrath.jpg");
 
 	for(uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
-		frames.push_back(Frame(swapchain, physicalDevice, logicalDevice, shaders, commandBuffer, descriptorSetLayout, descriptorPool, pipelineLayout, &mesh));
+		frames.push_back(Frame(swapchain, physicalDevice, logicalDevice, shaders, commandBuffer, frameDescriptorSetLayout, frameDescriptorPool, pipelineLayout, &mesh, material.get()));
 	}
 }
 

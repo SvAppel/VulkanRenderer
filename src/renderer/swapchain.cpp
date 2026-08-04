@@ -39,8 +39,8 @@ void Swapchain::build(vk::raii::Device& logicalDevice, vk::raii::PhysicalDevice 
 
     for(uint32_t i = 0; i<images.size(); i++)
     {
-        //vk::raii::ImageView imageView = create_image_view(logicalDevice, images[i], format.format);
-        imageViews.push_back(create_image_view(logicalDevice, images[i], format.format));
+        //vk::raii::ImageView imageView = make_image_view(logicalDevice, images[i], format.format);
+        imageViews.push_back(make_image_view(logicalDevice, images[i], format.format));
     }
 
     logger->print("Successfully created swapchain!");

@@ -4,10 +4,11 @@
 #include "../factories/mesh_factory.h"
 #include "frame.h"
 #include "swapchain.h"
+#include "texture.h"
 
 
 #define GLFW_INCLUDE_VULKAN
-#include "GLFW/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 #include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
@@ -145,18 +146,29 @@ private:
 	vk::raii::CommandPool commandPool = nullptr;
 
 	/**
-	 * @brief Describes the basic shape of the descriptor set layout
+	 * @brief Describes the basic shape of the per frame descriptor set layout
 	 */
-	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
+	vk::raii::DescriptorSetLayout frameDescriptorSetLayout = nullptr;
+
+	vk::raii::DescriptorPool frameDescriptorPool = nullptr;
+
+	/**
+	 * @brief Describes the basic shape of the per mesh descriptor set layout
+	 */
+	vk::raii::DescriptorSetLayout meshDescriptorSetLayout = nullptr;
+
+	vk::raii::DescriptorPool meshDescriptorPool = nullptr;
 
 	/**
 	 * @brief Describes the descriptor sets used by a pipeline
 	 */
 	vk::raii::PipelineLayout pipelineLayout = nullptr;
 
-	vk::raii::DescriptorPool descriptorPool = nullptr;
-
 	Mesh mesh;
+
+	std::unique_ptr<Texture> material = nullptr;
+
+
 
 	uint32_t frameIndex = 0;
 

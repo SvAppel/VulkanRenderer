@@ -4,6 +4,7 @@
 
 #include "image.h"
 #include "swapchain.h"
+#include "texture.h"
 #include "../factories/mesh_factory.h"
 
 /**
@@ -22,7 +23,8 @@ public:
         vk::raii::DescriptorSetLayout& descriptorSetLayout,
         vk::raii::DescriptorPool& descriptorPool,
         vk::raii::PipelineLayout& pipelineLayout,
-        Mesh* mesh
+        Mesh* mesh,
+        Texture* material
     );
 
     /**
@@ -97,4 +99,5 @@ private:
     vk::RenderingAttachmentInfoKHR colorAttachment = {};
 
     Mesh* mesh = nullptr;
+    Texture* material = nullptr;
 };

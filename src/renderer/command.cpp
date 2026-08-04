@@ -30,5 +30,38 @@ vk::raii::CommandBuffer allocate_command_buffer(vk::raii::Device& logicalDevice,
 
     vk::raii::CommandBuffer commandBuffer = std::move(logicalDevice.allocateCommandBuffers(allocInfo).front());
 
-    return commandBuffer;
+    return std::move(commandBuffer);
+}
+
+vk::raii::CommandBuffer begin_single_time_commands(vk::raii::Device& logicalDevice, vk::raii::CommandPool& commandPool)
+{
+    vk::CommandBufferAllocateInfo allocInfo
+    {
+        .commandPool = commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = 1
+    };
+    vk::raii::CommandBuffer commandBuffer = std::move(vk::raii::CommandBuffers(logicalDevice, allocInfo).front());
+
+    vk::CommandBufferBeginInfo beginInfo
+    {
+        .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+    };
+
+    commandBuffer.begin(beginInfo);
+
+    return std::move(commandBuffer);
+}
+
+void end_single_time_commands(vk::raii::CommandBuffer&& commandBuffer, vk::raii::Queue& queue)
+{
+    commandBuffer.end();
+
+    vk::SubmitInfo submitInfo
+    {
+        .commandBufferCount = 1,
+        .pCommandBuffers = &*commandBuffer
+    };
+    queue.submit(submitInfo, nullptr);
+    queue.waitIdle();
 }

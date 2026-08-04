@@ -15,6 +15,10 @@ public:
 
     void add(vk::raii::DescriptorSetLayout& descriptorSetLayout);
 
+    void add_push_constant(vk::ShaderStageFlags shaderStage, uint32_t size);
+
+    std::vector<vk::PushConstantRange> pushConstants;
+
 private:
     vk::raii::Device& logicalDevice;
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
@@ -73,4 +77,4 @@ std::vector<uint32_t> compile_file(CompilationInfo& info);
  * 
  * @return vk::ShaderExt: The created shader object
  */
-std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDevice, const char* name, vk::raii::DescriptorSetLayout& pLayout);
+std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDevice, const char* name, const std::vector<vk::DescriptorSetLayout>& pLayouts, const std::vector<vk::PushConstantRange>& pushConstants);

@@ -30,6 +30,7 @@ add_executable(VulkanRenderer
 	src/renderer/synchronisation.cpp
 	src/renderer/buffer.cpp
 	src/renderer/descriptors.cpp
+	src/renderer/texture.cpp
 	src/factories/mesh_factory.cpp
 )
 
@@ -38,7 +39,10 @@ include_directories(${GLFW_INCLUDE_DIRS})
 
 target_include_directories(VulkanRenderer
 	PRIVATE
-	dependencies
+	dependencies/GLFW
+	dependencies/vma
+	dependencies/shaderc
+	dependencies/stb_image
 	${SHADERC_INCLUDE_DIR}
 )
 

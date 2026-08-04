@@ -1,5 +1,6 @@
 #include "buffer.h"
 
+#include "command.h"
 #include "../logging/logger.h"
 
 std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> create_buffer
@@ -51,21 +52,23 @@ uint32_t find_memory_type(vk::raii::PhysicalDevice& physicalDevice, uint32_t typ
 
 void copy_buffer(vk::raii::Device& logicalDevice, vk::raii::Buffer& srcBuffer, vk::raii::Buffer& dstBuffer, vk::DeviceSize size, vk::raii::CommandPool& commandPool, vk::raii::Queue& queue)
 {
-    vk::CommandBufferAllocateInfo allocationInfo
-    {
-        .commandPool = commandPool,
-        .level = vk::CommandBufferLevel::ePrimary,
-        .commandBufferCount = 1
-    };
-    vk::raii::CommandBuffer commandCopyBuffer = std::move(logicalDevice.allocateCommandBuffers(allocationInfo).front());
-    commandCopyBuffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-        commandCopyBuffer.copyBuffer(*srcBuffer, *dstBuffer, vk::BufferCopy(0, 0, size));
-    commandCopyBuffer.end();
+    // vk::CommandBufferAllocateInfo allocationInfo
+    // {
+    //     .commandPool = commandPool,
+    //     .level = vk::CommandBufferLevel::ePrimary,
+    //     .commandBufferCount = 1
+    // };
+    // vk::raii::CommandBuffer commandCopyBuffer = std::move(logicalDevice.allocateCommandBuffers(allocationInfo).front());
+    vk::raii::CommandBuffer commandCopyBuffer = begin_single_time_commands(logicalDevice, commandPool);
+    //commandCopyBuffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    commandCopyBuffer.copyBuffer(*srcBuffer, *dstBuffer, vk::BufferCopy(0, 0, size));
+    // commandCopyBuffer.end();
     
-    queue.submit(vk::SubmitInfo
-        {
-            .commandBufferCount = 1,
-            .pCommandBuffers = &*commandCopyBuffer
-        }, nullptr);
-    queue.waitIdle();
+    // queue.submit(vk::SubmitInfo
+    //     {
+    //         .commandBufferCount = 1,
+    //         .pCommandBuffers = &*commandCopyBuffer
+    //     }, nullptr);
+    // queue.waitIdle();
+    end_single_time_commands(std::move(commandCopyBuffer), queue);
 }

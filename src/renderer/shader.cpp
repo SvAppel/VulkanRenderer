@@ -1,5 +1,6 @@
 #include "shader.h"
 
+#include "render_structs.h"
 #include "../logging/logger.h"
 #include "../backend/file.h"
 
@@ -12,6 +13,19 @@ void PipelineLayoutManager::add(vk::raii::DescriptorSetLayout& descriptorSetLayo
     descriptorSetLayouts.push_back(*descriptorSetLayout);
 }
 
+void PipelineLayoutManager::add_push_constant(vk::ShaderStageFlags shaderStage, uint32_t size)
+{
+    //We will use push constant for the object model matrix instead of descriptor sets, since it is per object and changes often
+    vk::PushConstantRange pushConstantInfo
+    {
+        .stageFlags = shaderStage,
+        .offset = 0,
+        .size = size
+    };
+
+    pushConstants.push_back(pushConstantInfo);
+}
+
 vk::raii::PipelineLayout PipelineLayoutManager::build_layout()
 {
     Logger* logger = Logger::get_logger();
@@ -20,7 +34,8 @@ vk::raii::PipelineLayout PipelineLayoutManager::build_layout()
     {
         .setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
         .pSetLayouts = descriptorSetLayouts.data(),
-        .pushConstantRangeCount = 0
+        .pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size()),
+        .pPushConstantRanges = pushConstants.data()
     };
 
     vk::raii::PipelineLayout layout = vk::raii::PipelineLayout(logicalDevice, layoutInfo);
@@ -104,7 +119,7 @@ std::vector<uint32_t> compile_file(CompilationInfo& info)
     return output;
 }
 
-std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDevice, const char* name, vk::raii::DescriptorSetLayout& pLayout)
+std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDevice, const char* name, const std::vector<vk::DescriptorSetLayout>& pLayouts, const std::vector<vk::PushConstantRange>& pushConstants)
 {
     Logger* logger = Logger::get_logger();
 
@@ -146,8 +161,10 @@ std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDe
         .codeSize = vertexSrc.size() * sizeof(uint32_t),
         .pCode = vertexSrc.data(),
         .pName = pName,
-        .setLayoutCount = 1,
-        .pSetLayouts = &*pLayout
+        .setLayoutCount = static_cast<uint32_t>(pLayouts.size()),
+        .pSetLayouts = pLayouts.data(),
+        .pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size()),
+        .pPushConstantRanges = pushConstants.data()
     };
 
     //Compile fragment module
@@ -172,8 +189,10 @@ std::vector<vk::raii::ShaderEXT> make_shader_objects(vk::raii::Device& logicalDe
         .codeSize = fragmentSrc.size() * sizeof(uint32_t),
         .pCode = fragmentSrc.data(),
         .pName = pName,
-        .setLayoutCount = 1,
-        .pSetLayouts = &*pLayout
+        .setLayoutCount = static_cast<uint32_t>(pLayouts.size()),
+        .pSetLayouts = pLayouts.data(),
+        .pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size()),
+        .pPushConstantRanges = pushConstants.data()
     };
 
     std::vector<vk::ShaderCreateInfoEXT> shaderInfo(2);

@@ -47,19 +47,33 @@ bool is_suitable(vk::raii::PhysicalDevice& device)
     Logger* logger = Logger::get_logger();
     logger->print("Checking if device is suitable");
 
+    // Check if the physicalDevice supports the Vulkan 1.3 API version
+	bool supportsVulkan1_3 = device.getProperties().apiVersion >= VK_API_VERSION_1_3;
+
     const char* ppRequestedExtension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    bool supportsRequestedExtensions = false;
 
     if(supports(device, &ppRequestedExtension, 1))
     {
         logger->print("Device can support the requested extensions!");
+        supportsRequestedExtensions = true;
     }
     else
     {
         logger->print("Device can NOT support she requested extensions!");
-        return false;
+        supportsRequestedExtensions = false;
     }
 
-    return true;
+    // Check if the physicalDevice supports the required features
+	auto features                 = device.template getFeatures2<vk::PhysicalDeviceFeatures2,
+		                                                            vk::PhysicalDeviceVulkan13Features,
+		                                                            vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+	bool supportsRequiredFeatures = features.template get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy &&
+		                            features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+		                            features.template get<vk::PhysicalDeviceVulkan13Features>().synchronization2 &&
+		                            features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+
+    return supportsVulkan1_3 & supportsRequestedExtensions & supportsRequiredFeatures;
 }
 
 vk::raii::PhysicalDevice choose_physical_device(const vk::raii::Instance& instance)
@@ -136,7 +150,7 @@ vk::raii::Device create_logical_device(vk::raii::PhysicalDevice physicalDevice, 
                         vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT,
                         vk::PhysicalDeviceShaderObjectFeaturesEXT>
         featureChain = {
-            {},                                 // vk::PhysicalDeviceFeatures2 (empty for now)
+            {.features = {.samplerAnisotropy = true}},  // vk::PhysicalDeviceFeatures2
             {.shaderDrawParameters = true},     // Enable shader draw parameters from Vulkan 1.1
             {.synchronization2 = true, .dynamicRendering = true},         // Enable dynamic rendering from Vulkan 1.3
             {.extendedDynamicState = true},      // Enable extended dynamic state from the extension

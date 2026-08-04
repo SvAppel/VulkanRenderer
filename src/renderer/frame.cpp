@@ -2,6 +2,7 @@
 #include "synchronisation.h"
 #include "descriptors.h"
 #include "buffer.h"
+#include "render_structs.h"
 #include "../factories/mesh_factory.h"
 
 #include <glm/glm.hpp>
@@ -17,11 +18,13 @@ Frame::Frame(Swapchain& swapchain,
     vk::raii::DescriptorSetLayout& descriptorSetLayout,
     vk::raii::DescriptorPool& descriptorPool,
     vk::raii::PipelineLayout& pipelineLayout, 
-    Mesh* mesh): 
+    Mesh* mesh,
+    Texture* material): 
     swapchain(swapchain), descriptorSetLayout(descriptorSetLayout), descriptorPool(descriptorPool), pipelineLayout(pipelineLayout)
 {
     this->commandBuffer = std::move(commandBuffer);
     this->mesh = mesh;
+    this->material = material;
 
     rawShaders.reserve(shaders.size());
     for (uint32_t i = 0; i < shaders.size(); i++)
@@ -62,6 +65,11 @@ Frame::Frame(Swapchain& swapchain,
 
 void Frame::record_command_buffer(uint32_t imageIndex)
 {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
     commandBuffer.reset();
 
     build_color_attachment(imageIndex);
@@ -100,6 +108,14 @@ void Frame::record_command_buffer(uint32_t imageIndex)
             commandBuffer.bindIndexBuffer(*mesh->indexBuffer, mesh->indexOffset, vk::IndexType::eUint32);
             commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, *descriptorSet, nullptr);
 
+            ObjectDataConstants objectData 
+            {
+                .model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))
+            };
+            commandBuffer.pushConstants(*pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(ObjectDataConstants), &objectData);
+
+            material->use(commandBuffer, pipelineLayout);
+
             commandBuffer.drawIndexed(mesh->indexCount, 1, 0, mesh->indexOffset, 0);
 
         commandBuffer.endRenderingKHR();
@@ -118,13 +134,14 @@ void Frame::record_command_buffer(uint32_t imageIndex)
 
 void Frame::update_uniform_buffer()
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
+    // static auto startTime = std::chrono::high_resolution_clock::now();
 
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    // auto currentTime = std::chrono::high_resolution_clock::now();
+    // float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    // The model matrix will be saved a a push constant. Since it changes often a push constant is faster than having to look it up in a descriptor set
+    //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapchain.extent.width) / static_cast<float>(swapchain.extent.height), 0.1f, 10.0f);
 
@@ -169,7 +186,6 @@ void Frame::set_dynamic_states()
     std::vector<vk::VertexInputAttributeDescription2EXT> attributes = Vertex::getAttributeDescriptions();
 
     commandBuffer.setVertexInputEXT(binding, attributes);
-
 
     vk::Viewport viewport
     {
