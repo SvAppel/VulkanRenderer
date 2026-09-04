@@ -7,7 +7,7 @@
 
 struct Vertex
 {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
 
@@ -29,7 +29,7 @@ struct Vertex
         std::vector<vk::VertexInputAttributeDescription2EXT> attributes(3);
         attributes[0].location = 0;
         attributes[0].binding = 0;
-        attributes[0].format = vk::Format::eR32G32Sfloat;
+        attributes[0].format = vk::Format::eR32G32B32Sfloat;
         attributes[0].offset = offsetof(Vertex, pos);
 
         attributes[1].location = 1;

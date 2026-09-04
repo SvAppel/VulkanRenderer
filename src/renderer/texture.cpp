@@ -21,12 +21,12 @@ Texture::Texture(
 {
     load();
 
-    image = make_image(logicalDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    image = make_image(logicalDevice, static_cast<uint32_t>(width), static_cast<uint32_t>(height), vk::Format::eR8G8B8A8Unorm, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal);
     imageMemory = make_image_memory(physicalDevice, logicalDevice, vk::MemoryPropertyFlagBits::eDeviceLocal, image);
     
     populate();
 
-    imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm);
+    imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor);
     
     make_sampler();
 
@@ -71,7 +71,8 @@ void Texture::populate()
         commandBuffer, image,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
         vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eTransferWrite,
-        vk::PipelineStageFlagBits2::eHost, vk::PipelineStageFlagBits2::eTransfer
+        vk::PipelineStageFlagBits2::eHost, vk::PipelineStageFlagBits2::eTransfer,
+        vk::ImageAspectFlagBits::eColor
     );
 
     copy_buffer_to_image(commandBuffer, stagingBuffer, image, width, height);
@@ -81,7 +82,8 @@ void Texture::populate()
         commandBuffer, image,
         vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
         vk::AccessFlagBits2::eTransferWrite, vk::AccessFlagBits2::eShaderRead,
-        vk::PipelineStageFlagBits2::eTransfer, vk::PipelineStageFlagBits2::eFragmentShader
+        vk::PipelineStageFlagBits2::eTransfer, vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::ImageAspectFlagBits::eColor
     );
     end_single_time_commands(std::move(commandBuffer),queue);
 }

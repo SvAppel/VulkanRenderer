@@ -7,6 +7,14 @@
 #include "texture.h"
 #include "../factories/mesh_factory.h"
 
+struct DepthAttachment
+{
+    vk::raii::Image image = nullptr;
+    vk::raii::DeviceMemory memory = nullptr;
+    vk::raii::ImageView imageView = nullptr;
+    vk::Format format{};
+};
+
 /**
  * @brief Holds all the state used in one rendering/presentation operation.
  */
@@ -23,6 +31,7 @@ public:
         vk::raii::DescriptorSetLayout& descriptorSetLayout,
         vk::raii::DescriptorPool& descriptorPool,
         vk::raii::PipelineLayout& pipelineLayout,
+        DepthAttachment& depthAttachment,
         Mesh* mesh,
         Texture* material
     );
@@ -60,6 +69,8 @@ public:
     
     vk::raii::DescriptorSet descriptorSet = nullptr;
 
+    DepthAttachment& depthAttachment;
+
 
     /**
 	 * @brief A Semaphore for GPU synchronisation after the image has been aquired
@@ -85,6 +96,11 @@ private:
     void build_color_attachment(uint32_t imageIndex);
 
     /**
+     * @brief Build a description of the depth attachment
+     */
+    void build_depth_attachment();
+
+    /**
      * @brief Build a description of the rendering info
      */
     void build_rendering_info();
@@ -96,7 +112,8 @@ private:
 
     vk::RenderingInfoKHR renderingInfo = {};
 
-    vk::RenderingAttachmentInfoKHR colorAttachment = {};
+    vk::RenderingAttachmentInfoKHR colorAttachmentInfo = {};
+    vk::RenderingAttachmentInfoKHR depthAttachmentInfo = {};
 
     Mesh* mesh = nullptr;
     Texture* material = nullptr;

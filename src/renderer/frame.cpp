@@ -17,10 +17,11 @@ Frame::Frame(Swapchain& swapchain,
     vk::raii::CommandBuffer& commandBuffer,
     vk::raii::DescriptorSetLayout& descriptorSetLayout,
     vk::raii::DescriptorPool& descriptorPool,
-    vk::raii::PipelineLayout& pipelineLayout, 
+    vk::raii::PipelineLayout& pipelineLayout,
+    DepthAttachment& depthAttachment, 
     Mesh* mesh,
     Texture* material): 
-    swapchain(swapchain), descriptorSetLayout(descriptorSetLayout), descriptorPool(descriptorPool), pipelineLayout(pipelineLayout)
+    swapchain(swapchain), descriptorSetLayout(descriptorSetLayout), descriptorPool(descriptorPool), pipelineLayout(pipelineLayout), depthAttachment(depthAttachment)
 {
     this->commandBuffer = std::move(commandBuffer);
     this->mesh = mesh;
@@ -73,6 +74,7 @@ void Frame::record_command_buffer(uint32_t imageIndex)
     commandBuffer.reset();
 
     build_color_attachment(imageIndex);
+    build_depth_attachment();
     build_rendering_info();
 
     vk::CommandBufferBeginInfo beginInfo{};
@@ -90,7 +92,18 @@ void Frame::record_command_buffer(uint32_t imageIndex)
             // Since the image isnt used beforehand i.e. as a texture to be read from, 
             // the earliest necessary stage is eColorAttachmentOutput, when the pixel colors are actually written to the image
             //vk::PipelineStageFlagBits2::eTopOfPipe, vk::PipelineStageFlagBits2::eFragmentShader
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::PipelineStageFlagBits2::eColorAttachmentOutput
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::ImageAspectFlagBits::eColor
+        );
+
+        transition_image_layout
+        (
+            commandBuffer, depthAttachment.image,
+            vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::AccessFlagBits2::eDepthStencilAttachmentWrite, vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::ImageAspectFlagBits::eDepth
         );
 
         //Instead of creating a static pipeline we setup the pipeline dynamically via command buffer instructions
@@ -126,7 +139,8 @@ void Frame::record_command_buffer(uint32_t imageIndex)
             vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR,
             vk::AccessFlagBits2::eColorAttachmentWrite, vk::AccessFlagBits2::eNone,
             //vk::PipelineStageFlagBits2::eFragmentShader, vk::PipelineStageFlagBits2::eBottomOfPipe
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::PipelineStageFlagBits2::eBottomOfPipe
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::PipelineStageFlagBits2::eBottomOfPipe,
+            vk::ImageAspectFlagBits::eColor
         );
 
     commandBuffer.end();
@@ -162,7 +176,21 @@ void Frame::build_color_attachment(uint32_t imageIndex)
         .clearValue = vk::ClearValue({0.5f, 0.0f, 0.25f, 1.0f})
     };
 
-    colorAttachment = tempColorAttachment;
+    colorAttachmentInfo = tempColorAttachment;
+}
+
+void Frame::build_depth_attachment()
+{
+    vk::RenderingAttachmentInfoKHR tempDepthAttachment
+    {
+        .imageView = depthAttachment.imageView,
+        .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eDontCare,
+        .clearValue = vk::ClearDepthStencilValue(1.0f, 0)
+    };
+
+    depthAttachmentInfo = tempDepthAttachment;
 }
 
 void Frame::build_rendering_info()
@@ -174,7 +202,8 @@ void Frame::build_rendering_info()
         //bitmask indicating the layers which will be rendered to
         .viewMask = 0,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachment
+        .pColorAttachments = &colorAttachmentInfo,
+        .pDepthAttachment = &depthAttachmentInfo
     };
 
     renderingInfo = tempRenderingInfo;
@@ -207,10 +236,12 @@ void Frame::set_dynamic_states()
     commandBuffer.setAlphaToCoverageEnableEXT(0);
     commandBuffer.setCullMode(vk::CullModeFlagBits::eNone);
 
-    commandBuffer.setDepthTestEnable(0);
-    commandBuffer.setDepthWriteEnable(0);
+    commandBuffer.setDepthTestEnable(1);
+    commandBuffer.setDepthWriteEnable(1);
     commandBuffer.setDepthBiasEnable(0);
     commandBuffer.setStencilTestEnable(0);
+    commandBuffer.setDepthBoundsTestEnable(0);
+    commandBuffer.setDepthCompareOp(vk::CompareOp::eLess);
 
     commandBuffer.setPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
     commandBuffer.setPrimitiveRestartEnable(0);

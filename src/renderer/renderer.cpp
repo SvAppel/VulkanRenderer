@@ -69,13 +69,18 @@ Engine::Engine(GLFWwindow* window) : window(window)
 
 	mesh = build_mesh(physicalDevice, logicalDevice, commandPool, graphicsQueue);
 
-	//TODO: make new or use existing commandbuffer, replace frameDescriptorSetLayout and frameDescriptorPool with the proper ones
+	depthAttachment.format = find_depth_format(physicalDevice);
+	depthAttachment.image = make_image(logicalDevice, swapchain.extent.width, swapchain.extent.height, depthAttachment.format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	depthAttachment.memory = make_image_memory(physicalDevice, logicalDevice, vk::MemoryPropertyFlagBits::eDeviceLocal, depthAttachment.image);
+	depthAttachment.imageView = make_image_view(logicalDevice, depthAttachment.image, depthAttachment.format, vk::ImageAspectFlagBits::eDepth);
+
+
 	material = std::make_unique<Texture>(physicalDevice, logicalDevice, commandPool, graphicsQueue, meshDescriptorSetLayout, meshDescriptorPool, "../textures/benrath.jpg");
 
 	for(uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vk::raii::CommandBuffer commandBuffer = allocate_command_buffer(logicalDevice, commandPool);
-		frames.push_back(Frame(swapchain, physicalDevice, logicalDevice, shaders, commandBuffer, frameDescriptorSetLayout, frameDescriptorPool, pipelineLayout, &mesh, material.get()));
+		frames.push_back(Frame(swapchain, physicalDevice, logicalDevice, shaders, commandBuffer, frameDescriptorSetLayout, frameDescriptorPool, pipelineLayout, depthAttachment, &mesh, material.get()));
 	}
 }
 
@@ -242,7 +247,7 @@ void Engine::draw()
 	vk::Result waitResult = logicalDevice.waitForFences(*frame.renderFinishedFence, false, UINT32_MAX);
 	if(waitResult == vk::Result::eErrorOutOfDateKHR || waitResult == vk::Result::eSuboptimalKHR)
 	{
-		swapchain.rebuild(logicalDevice, physicalDevice, surface, window);
+		rebuild_swapchain();
 	}
 
 	frame.update_uniform_buffer();
@@ -278,8 +283,20 @@ void Engine::draw()
 	vk::Result result = graphicsQueue.presentKHR(presentInfo);
 	if(result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
 	{
-		swapchain.rebuild(logicalDevice, physicalDevice, surface, window);
+		rebuild_swapchain();
 	}
 
 	frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Engine::rebuild_swapchain()
+{
+	// rebuild swapchain
+	swapchain.rebuild(logicalDevice, physicalDevice, surface, window);
+
+	// recreate depth ressources
+	depthAttachment.format = find_depth_format(physicalDevice);
+	depthAttachment.image = make_image(logicalDevice, swapchain.extent.width, swapchain.extent.height, depthAttachment.format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	depthAttachment.memory = make_image_memory(physicalDevice, logicalDevice, vk::MemoryPropertyFlagBits::eDeviceLocal, depthAttachment.image);
+	depthAttachment.imageView = make_image_view(logicalDevice, depthAttachment.image, depthAttachment.format, vk::ImageAspectFlagBits::eDepth);
 }

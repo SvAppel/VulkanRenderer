@@ -67,6 +67,8 @@ public:
 	
 
 private:
+
+	void rebuild_swapchain();
 	
 	/**
 	* @brief static debug logger
@@ -168,8 +170,7 @@ private:
 
 	std::unique_ptr<Texture> material = nullptr;
 
-
+	DepthAttachment depthAttachment;
 
 	uint32_t frameIndex = 0;
-
 };
